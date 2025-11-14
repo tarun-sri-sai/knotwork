@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/app/Header";
 
 const monoFont = JetBrains_Mono({
   variable: "--font-mono",
@@ -20,7 +21,10 @@ const RootLayout = ({
 }>) => {
   return (
     <html lang="en">
-      <body className={`${monoFont.variable} antialiased`}>{children}</body>
+      <body className={`${monoFont.variable} antialiased`}>
+        <Header />
+        <main className="text-sm">{children}</main>
+      </body>
     </html>
   );
 };
