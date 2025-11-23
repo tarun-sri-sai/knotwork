@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { createReadOnlyClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 const Home = async () => {
-  const supabase = await createClient();
+  const supabase = await createReadOnlyClient();
 
   const {
     data: { user },
