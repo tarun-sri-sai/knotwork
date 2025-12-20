@@ -17,3 +17,30 @@ body {
   color: var(--foreground);
   font-family: var(--font-mono), "monospace";
 }
+
+.field {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.field::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  opacity: 0;
+}
+
+.field:focus-within::before {
+  content: ">";
+  opacity: 1;
+}
+
+.field input {
+  outline: none;
+}
+
+.field button:focus {
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

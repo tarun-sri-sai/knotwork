@@ -21,9 +21,9 @@ const RootLayout = ({
 }>) => {
   return (
     <html lang="en">
-      <body className={`${monoFont.variable} antialiased`}>
+      <body className={`${monoFont.variable} antialiased flex flex-col h-screen`}>
         <Header />
-        <main className="text-sm">{children}</main>
+        <main className="text-sm flex-1 flex items-center justify-center">{children}</main>
       </body>
     </html>
   );
