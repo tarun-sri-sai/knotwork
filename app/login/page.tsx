@@ -12,12 +12,12 @@ const Login = async ({ searchParams }: { searchParams: Promise<Record<string, st
       <div className="flex flex-col gap-4">
         <div className="field grid grid-cols-2 gap-4">
           <label htmlFor="email">Email: </label>
-          <input id="email" type="email" />
+          <input id="email" name="email" type="email" />
         </div>
 
         <div className="field grid grid-cols-2 gap-4">
           <label htmlFor="password">Password: </label>
-          <input id="password" type="password" />
+          <input id="password" name="password" type="password" />
         </div>
 
         <div className="field grid grid-cols-2 gap-4">
