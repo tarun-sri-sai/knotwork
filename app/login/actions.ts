@@ -13,5 +13,5 @@ export const handleLogin = async (formData: FormData) => {
   if (error) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
-  redirect("/login");
+  redirect("/tasks");
 };
