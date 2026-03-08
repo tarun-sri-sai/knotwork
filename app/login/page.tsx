@@ -1,9 +1,16 @@
 import { handleLogin } from "./actions";
 import ErrorMessage from "@/components/ErrorMessage";
 
-const Login = async ({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) => {
+const Login = async ({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
   const resolvedSearchParams = await searchParams;
-  const error = (Array.isArray(resolvedSearchParams.error) ? resolvedSearchParams.error[0] : resolvedSearchParams.error) ?? '';
+  const error =
+    (Array.isArray(resolvedSearchParams.error)
+      ? resolvedSearchParams.error[0]
+      : resolvedSearchParams.error) ?? "";
 
   return (
     <form className="flex flex-col items-center justify-center gap-20">

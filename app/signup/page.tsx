@@ -1,5 +1,51 @@
-const Signup = () => {
-  return <div>Signup</div>;
+import { handleSignup } from "./actions";
+import ErrorMessage from "@/components/ErrorMessage";
+
+const Signup = async ({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
+  const resolvedSearchParams = await searchParams;
+  const error =
+    (Array.isArray(resolvedSearchParams.error)
+      ? resolvedSearchParams.error[0]
+      : resolvedSearchParams.error) ?? "";
+
+  return (
+    <form className="flex flex-col items-center justify-center gap-20">
+      <h2 className="text-lg">Please enter the email and new password</h2>
+
+      <div className="flex flex-col gap-4">
+        <div className="field grid grid-cols-2 gap-4">
+          <label htmlFor="email">Email: </label>
+          <input id="email" name="email" type="email" />
+        </div>
+
+        <div className="field grid grid-cols-2 gap-4">
+          <label htmlFor="password">New password: </label>
+          <input id="password" name="password" type="password" />
+        </div>
+
+        <div className="field grid grid-cols-2 gap-4">
+          <label htmlFor="confirmPassword">Re-enter password: </label>
+          <input id="confirmPassword" name="confirmPassword" type="password" />
+        </div>
+
+        <div className="field grid grid-cols-2 gap-4">
+          <button
+            formAction={handleSignup}
+            type="submit"
+            className="text-right"
+          >
+            Sign up
+          </button>
+        </div>
+
+        {error && <ErrorMessage message={error} />}
+      </div>
+    </form>
+  );
 };
 
 export default Signup;
