@@ -8,14 +8,14 @@ const Home = () => {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
           <p>New to this?</p>
-          <button formAction={handleSignup} type="submit" className="text-right">
+          <button formAction={handleSignup} type="submit">
             Signup
           </button>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <p>Already have an account?</p>
-          <button formAction={handleLogin} type="submit" className="text-right">
+          <button formAction={handleLogin} type="submit">
             Login
           </button>
         </div>

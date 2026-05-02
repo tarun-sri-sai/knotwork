@@ -28,7 +28,7 @@ const Login = async ({
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <button formAction={handleLogin} type="submit" className="text-right">
+          <button formAction={handleLogin} type="submit">
             Login
           </button>
         </div>

@@ -36,7 +36,6 @@ const Signup = async ({
           <button
             formAction={handleSignup}
             type="submit"
-            className="text-right"
           >
             Sign up
           </button>

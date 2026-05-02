@@ -31,7 +31,6 @@ const ConfirmEmail = async ({
           <button
             formAction={handleResend}
             type="submit"
-            className="text-right"
           >
             Resend email
           </button>
