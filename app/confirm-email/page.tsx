@@ -22,12 +22,12 @@ const ConfirmEmail = async ({
       <h2 className="text-lg">A confirmation email has been sent to your email address, please head to the home page once confirmed</h2>
 
       <div className="flex flex-col gap-4">
-        <div className="field grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <label htmlFor="email">Missed it? Enter your email to re-send: </label>
           <input id="email" name="email" type="email" />
         </div>
 
-        <div className="field grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <button
             formAction={handleResend}
             type="submit"

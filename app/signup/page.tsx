@@ -17,22 +17,22 @@ const Signup = async ({
       <h2 className="text-lg">Please enter the email and new password</h2>
 
       <div className="flex flex-col gap-4">
-        <div className="field grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <label htmlFor="email">Email: </label>
           <input id="email" name="email" type="email" />
         </div>
 
-        <div className="field grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <label htmlFor="password">New password: </label>
           <input id="password" name="password" type="password" />
         </div>
 
-        <div className="field grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <label htmlFor="confirmPassword">Re-enter password: </label>
           <input id="confirmPassword" name="confirmPassword" type="password" />
         </div>
 
-        <div className="field grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <button
             formAction={handleSignup}
             type="submit"
