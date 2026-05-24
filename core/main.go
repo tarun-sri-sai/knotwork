@@ -18,11 +18,7 @@ func parseTodoHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := ParseTodo(string(body))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]any {
-			"error": err,
-			"status": http.StatusBadRequest,
-		})
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
