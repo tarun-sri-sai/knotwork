@@ -19,7 +19,7 @@ func splitBlocks(text string) [][]string {
 	blockRegex := regexp.MustCompile(`\n[\n\s]*\n`)
 	blocks := blockRegex.Split(text, -1)
 
-	var result [][]string
+	result := [][]string{}
 	for _, block := range blocks {
 		lines := strings.Split(block, "\n")
 		result = append(result, lines)
@@ -68,7 +68,7 @@ func isFinished(blockLines []string) (bool, error) {
 }
 
 func parseBlocks(blocks [][]string) ([]map[string]any, error) {
-	var blockData []map[string]any
+	blockData := []map[string]any{}
 	for _, block := range blocks {
 		indent, err := getIndent(block)
 		if err != nil {
@@ -84,7 +84,7 @@ func parseBlocks(blocks [][]string) ([]map[string]any, error) {
 			continue
 		}
 
-		var blockLines []string
+		blockLines := []string{}
 		for _, line := range block {
 			blockLines = append(blockLines, strings.TrimSpace(line))
 		}
