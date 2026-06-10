@@ -5,6 +5,6 @@ import (
 )
 
 type Repository interface {
-	GetTaskMapBefore(date string) ([]domain.TaskMap, error)
-	GetTaskMapBetween(startDate, endDate string) ([]domain.TaskMap, error)
+	GetTaskMapBefore(date string) (domain.TaskMap, error)
+	GetTaskMapsBetween(startDate, endDate string) ([]domain.TaskMap, error)
 }

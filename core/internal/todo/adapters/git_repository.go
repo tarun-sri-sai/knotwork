@@ -67,7 +67,7 @@ func (r *GitRepository) getHistory() ([]historyEntry, error) {
 	return result, nil
 }
 
-func (r *GitRepository) getRange(startDate, endDate string) (int, int, error) {
+func (r *GitRepository) getRange(history []historyEntry, startDate, endDate string) (int, int, error) {
 	startDateParsed, err := time.Parse(dateFmt, startDate)
 	if err != nil {
 		return -1, -1, fmt.Errorf("invalid start date format: %w", err)
@@ -78,17 +78,12 @@ func (r *GitRepository) getRange(startDate, endDate string) (int, int, error) {
 		return -1, -1, fmt.Errorf("invalid end date format: %w", err)
 	}
 
-	history, err := r.getHistory()
-	if err != nil {
-		return -1, -1, err
-	}
-
 	if len(history) == 0 {
 		return 0, 0, fmt.Errorf("no history")
 	}
 
 	start := sort.Search(len(history), func(i int) bool {
-		return history[i].date.Before(startDateParsed)
+		return !history[i].date.Before(startDateParsed)
 	})
 	if start == len(history) {
 		return 0, 0, fmt.Errorf("no commits found from %s", startDate)
@@ -107,34 +102,30 @@ func (r *GitRepository) getRange(startDate, endDate string) (int, int, error) {
 	return start, end, nil
 }
 
-func (r *GitRepository) getTaskMaps(startIdx, endIdx int) ([]domain.TaskMap, error) {
-	history, err := r.getHistory()
-	if err != nil {
-		return nil, err
-	}
-
+func (r *GitRepository) getTaskMaps(history []historyEntry) ([]domain.TaskMap, error) {
 	result := []domain.TaskMap{}
-	for i := startIdx; i <= endIdx; i++ {
-		c := history[i].commit
-		file, err := c.File(todoFile)
+	for _, h := range history {
+		commit := h.commit
+
+		file, err := commit.File(todoFile)
 		if err != nil {
-			return nil, fmt.Errorf("get file from commit %s: %w", c.Hash, err)
+			return nil, fmt.Errorf("get file from commit %s: %w", commit.Hash, err)
 		}
 
 		reader, err := file.Blob.Reader()
 		if err != nil {
-			return nil, fmt.Errorf("get reader for file in commit %s: %w", c.Hash, err)
+			return nil, fmt.Errorf("get reader for file in commit %s: %w", commit.Hash, err)
 		}
-		defer reader.Close()
 
 		text, err := io.ReadAll(reader)
+		reader.Close()
 		if err != nil {
-			return nil, fmt.Errorf("read file content in commit %s: %w", c.Hash, err)
+			return nil, fmt.Errorf("read file content in commit %s: %w", commit.Hash, err)
 		}
 
 		blockData, err := domain.ParseTodo(string(text))
 		if err != nil {
-			return nil, fmt.Errorf("parse todo file in commit %s: %w", c.Hash, err)
+			return nil, fmt.Errorf("parse todo file in commit %s: %w", commit.Hash, err)
 		}
 
 		result = append(result, blockData)
@@ -143,32 +134,37 @@ func (r *GitRepository) getTaskMaps(startIdx, endIdx int) ([]domain.TaskMap, err
 	return result, nil
 }
 
-func (r *GitRepository) GetTaskMapBefore(date string) ([]domain.TaskMap, error) {
+func (r *GitRepository) GetTaskMapBefore(date string) (domain.TaskMap, error) {
 	history, err := r.getHistory()
 	if err != nil {
 		return nil, err
 	}
 
-	startIdx, endIdx, err := r.getRange(history[0].date.Format(dateFmt), date)
+	_, endIdx, err := r.getRange(history, history[0].date.Format(dateFmt), date)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := r.getTaskMaps(startIdx, endIdx)
+	result, err := r.getTaskMaps(history[endIdx : endIdx+1])
 	if err != nil {
 		return nil, err
 	}
 
-	return result, nil
+	return result[0], nil
 }
 
-func (r *GitRepository) GetTaskMapBetween(startDate, endDate string) ([]domain.TaskMap, error) {
-	startIdx, endIdx, err := r.getRange(startDate, endDate)
+func (r *GitRepository) GetTaskMapsBetween(startDate, endDate string) ([]domain.TaskMap, error) {
+	history, err := r.getHistory()
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := r.getTaskMaps(startIdx, endIdx)
+	startIdx, endIdx, err := r.getRange(history, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := r.getTaskMaps(history[startIdx : endIdx+1])
 	if err != nil {
 		return nil, err
 	}
