@@ -1,4 +1,4 @@
-package main
+package domain
 
 import (
 	"crypto/sha1"
@@ -67,28 +67,27 @@ func isFinished(blockLines []string) (bool, error) {
 	return len(blockLines) >= 2 && matched, nil
 }
 
-func parseBlocks(blocks [][]string) ([]map[string]any, error) {
-	blockData := []map[string]any{}
-	for _, block := range blocks {
-		indent, err := getIndent(block)
+func parseBlocks(blocks [][]string) ([]block, error) {
+	blockData := []block{}
+	for _, bl := range blocks {
+		indent, err := getIndent(bl)
 		if err != nil {
 			return nil, err
 		}
 
-		if isCategoryBlock(block) {
-			hash := sha1.Sum([]byte(block[1]))
-			blockData = append(blockData, map[string]any{
-				"category": block[1],
-				"id":       hex.EncodeToString(hash[:]),
+		if isCategoryBlock(bl) {
+			hash := sha1.Sum([]byte(bl[1]))
+			blockData = append(blockData, category{
+				Category: bl[1],
+				Id:       hex.EncodeToString(hash[:]),
 			})
 			continue
 		}
 
 		blockLines := []string{}
-		for _, line := range block {
+		for _, line := range bl {
 			blockLines = append(blockLines, strings.TrimSpace(line))
 		}
-
 
 		finished, err := isFinished(blockLines)
 		if err != nil {
@@ -96,32 +95,34 @@ func parseBlocks(blocks [][]string) ([]map[string]any, error) {
 		}
 
 		hash := sha1.Sum([]byte(blockLines[0]))
-		blockData = append(blockData, map[string]any{
-			"level":    indent,
-			"title":    blockLines[0],
-			"updates":  blockLines[1:],
-			"id":       hex.EncodeToString(hash[:]),
-			"finished": finished,
+		blockData = append(blockData, task{
+			Level:    indent,
+			Title:    blockLines[0],
+			Updates:  blockLines[1:],
+			Id:       hex.EncodeToString(hash[:]),
+			Finished: finished,
 		})
 	}
 
 	return blockData, nil
 }
 
-func validateHeirarchy(blockData []map[string]any) error {
+func validateHeirarchy(blockData []block) error {
 	currIndents := []int{-1}
 	currCategory := ""
 	firstBlock := true
 
-	for _, block := range blockData {
-		if category, ok := block["category"]; ok {
+	for _, bl := range blockData {
+		if categoryBlock, ok := bl.(category); ok {
 			firstBlock = true
 			currIndents = []int{-1}
-			currCategory = category.(string)
+			currCategory = categoryBlock.Category
 			continue
 		}
 
-		level := block["level"].(int)
+		taskBlock, _ := bl.(task)
+
+		level := taskBlock.Level
 
 		if firstBlock && level > 0 {
 			return fmt.Errorf("invalid first task for %s", currCategory)
@@ -132,7 +133,7 @@ func validateHeirarchy(blockData []map[string]any) error {
 		}
 
 		if level-1 != currIndents[len(currIndents)-1] {
-			return fmt.Errorf(`invalid parent task for "%s"`, block["title"].(string))
+			return fmt.Errorf(`invalid parent task for "%s"`, taskBlock.Title)
 		}
 
 		currIndents = append(currIndents, level)
@@ -142,7 +143,7 @@ func validateHeirarchy(blockData []map[string]any) error {
 	return nil
 }
 
-func validateBlockData(blockData []map[string]any) error {
+func validateBlockData(blockData []block) error {
 	if len(blockData) == 0 {
 		return errors.New("empty todo")
 	}
@@ -155,67 +156,72 @@ func validateBlockData(blockData []map[string]any) error {
 	return nil
 }
 
-func buildTaskMap(blockData []map[string]any) map[string]any {
-	result := make(map[string]any)
+func buildTaskMap(blockData []block) TaskMap {
+	result := make(TaskMap)
 	var currCategory string
 	categorySet := false
 
-	dummyTask := map[string]any{
-		"level": -1,
-		"id":    "",
+	dummyTask := task{
+		Id:    "",
+		Level: -1,
+		Title: "",
+		Updates: []string{},
+		Finished: false,
 	}
-	currParents := []map[string]any{dummyTask}
-	for _, block := range blockData {
-		if category, ok := block["category"].(string); ok {
-			currCategory = category
+	currParents := []task{dummyTask}
+	for _, bl := range blockData {
+		if categoryBlock, ok := bl.(category); ok {
+			currCategory = categoryBlock.Category
 			categorySet = true
-			currParents = []map[string]any{dummyTask}
+			currParents = []task{dummyTask}
 			continue
 		}
 
-		currentTask := map[string]any{
-			"title":    block["title"],
-			"updates":  block["updates"],
-			"finished": block["finished"],
+		taskBlock, _ := bl.(task)
+
+		currentTask := Task{
+			Title: taskBlock.Title,
+			Updates: taskBlock.Updates,
+			Finished: taskBlock.Finished,
 		}
 
 		if categorySet {
-			currentTask["category"] = currCategory
+			currentTask.Category = &currCategory
 		}
 
 		for len(currParents) > 0 &&
-			currParents[len(currParents)-1]["level"].(int) >= block["level"].(int) {
+			currParents[len(currParents)-1].Level >= taskBlock.Level {
 			currParents = currParents[:len(currParents)-1]
 		}
 
 		h := sha1.New()
 		for _, parent := range currParents[1:] {
-			h.Write([]byte(parent["id"].(string)))
+			h.Write([]byte(parent.Id))
 		}
-		h.Write([]byte(block["id"].(string)))
+		h.Write([]byte(taskBlock.Id))
 		taskId := hex.EncodeToString(h.Sum(nil))
-		currentTask["id"] = taskId
+		currentTask.Id = TaskId(taskId)
 
 		parentTitles := []string{}
-		finished := block["finished"].(bool)
+		finished := taskBlock.Finished
 		for _, parent := range currParents[1:] {
-			parentTitles = append(parentTitles, parent["title"].(string))
+			parentTitles = append(parentTitles, parent.Title)
 
-			if pf, ok := parent["finished"].(bool); ok && pf {
+			if parent.Finished {
 				finished = true
 			}
 		}
-		currentTask["parentTasks"] = parentTitles
-		currentTask["finished"] = finished
+		currentTask.ParentTasks = parentTitles
+		currentTask.Finished = finished
 
-		result[taskId] = currentTask
-		currParents = append(currParents, block)
+		result[TaskId(taskId)] = currentTask
+		currParents = append(currParents, taskBlock)
 	}
 
 	return result
 }
 
-func ParseTodo(text string) (map[string]any, error) {
+func ParseTodo(text string) (TaskMap, error) {
 	text = normalize(text)
 	blocks := splitBlocks(text)
 

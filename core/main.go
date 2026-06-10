@@ -2,21 +2,23 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 )
 
+var core *Core
+
 func parseTodoHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
-    
 	if err != nil {
 		http.Error(w, "failed to read body", http.StatusBadRequest)
 		return
 	}
 
-	res, err := ParseTodo(string(body))
+	res, err := core.repository.GetTaskMapBefore(string(body))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -26,7 +28,18 @@ func parseTodoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	repo := flag.String("repo", "", "repo type (e.g., git)")
+	repoDsn := flag.String("dsn", "", "repo connection string")
+	flag.Parse()
+
 	r := chi.NewRouter()
+
+	coreObj, err := NewCore(*repo, *repoDsn)
+	if err != nil {
+		panic(err)
+	}
+
+	core = coreObj
 
 	r.Post("/parse-todo", parseTodoHandler)
 
