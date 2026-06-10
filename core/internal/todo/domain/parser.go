@@ -158,7 +158,7 @@ func validateBlockData(blockData []block) error {
 
 func buildTaskMap(blockData []block) TaskMap {
 	result := make(TaskMap)
-	var currCategory string
+	currCategory := ""
 	categorySet := false
 
 	dummyTask := task{
@@ -186,7 +186,7 @@ func buildTaskMap(blockData []block) TaskMap {
 		}
 
 		if categorySet {
-			currentTask.Category = &currCategory
+			currentTask.Category = currCategory
 		}
 
 		for len(currParents) > 0 &&

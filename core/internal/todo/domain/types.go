@@ -1,24 +1,24 @@
 package domain
 
 type category struct {
-	Id   string	`json:"id"`
-	Category string	`json:"category"`
+	Id       string `json:"id"`
+	Category string `json:"category"`
 }
 
 type task struct {
-	Id	string	`json:"id"`
-	Level int	`json:"level"`
-	Title string	`json:"title"`
-	Updates []string `json:"updates"`
-	Finished bool `json:"finished"`
+	Id       string   `json:"id"`
+	Level    int      `json:"level"`
+	Title    string   `json:"title"`
+	Updates  []string `json:"updates"`
+	Finished bool     `json:"finished"`
 }
 
 type block interface {
-    isBlock()
+	isBlock()
 }
 
 func (category) isBlock() {}
-func (task) isBlock() {}
+func (task) isBlock()     {}
 
 type TaskId string
 
@@ -27,7 +27,7 @@ type Task struct {
 	Title       string   `json:"title"`
 	Updates     []string `json:"updates"`
 	Finished    bool     `json:"finished"`
-	Category    *string   `json:"category"`
+	Category    string   `json:"category"`
 	ParentTasks []string `json:"parentTasks"`
 }
 
