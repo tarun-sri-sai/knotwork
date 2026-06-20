@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -11,14 +10,11 @@ import (
 
 var core *Core
 
-func parseTodoHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "failed to read body", http.StatusBadRequest)
-		return
-	}
+func getTodosHandler(w http.ResponseWriter, r *http.Request) {
+	startDate := r.URL.Query().Get("startDate")
+	endDate := r.URL.Query().Get("endDate")
 
-	res, err := core.repository.GetTaskMapBefore(string(body))
+	res, err := core.repository.GetTaskDurationsBetween(startDate, endDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -41,7 +37,7 @@ func main() {
 
 	core = coreObj
 
-	r.Post("/parse-todo", parseTodoHandler)
+	r.Get("/todos", getTodosHandler)
 
 	http.ListenAndServe(":80", r)
 }

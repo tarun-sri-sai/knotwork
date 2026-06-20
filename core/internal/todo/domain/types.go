@@ -1,5 +1,9 @@
 package domain
 
+import (
+	"time"
+)
+
 type category struct {
 	Id       string `json:"id"`
 	Category string `json:"category"`
@@ -32,3 +36,9 @@ type Task struct {
 }
 
 type TaskMap map[TaskId]Task
+
+type TaskDuration struct {
+	Task
+	StartDate   time.Time `json:"startDate"`
+	EndDate     time.Time `json:"endDate"`
+}

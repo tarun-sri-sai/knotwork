@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"knotwork-core/internal/todo/domain"
 	"knotwork-core/internal/todo/ports"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const dateFmt = "2006-01-02"
@@ -55,7 +56,7 @@ func (r *GitRepository) getHistory() ([]historyEntry, error) {
 		msg := strings.TrimSpace(c.Message)
 		date, err := time.Parse(dateFmt, msg)
 		if err != nil {
-			fmt.Printf("commit %s - invalid date format: %s", c.Hash, msg)
+			continue
 		}
 
 		result = append(result, historyEntry{date: date, commit: c})
@@ -68,37 +69,45 @@ func (r *GitRepository) getHistory() ([]historyEntry, error) {
 }
 
 func (r *GitRepository) getRange(history []historyEntry, startDate, endDate string) (int, int, error) {
+	start := -1
+	end := -1
+
 	startDateParsed, err := time.Parse(dateFmt, startDate)
 	if err != nil {
-		return -1, -1, fmt.Errorf("invalid start date format: %w", err)
+		start = 0
 	}
 
 	endDateParsed, err := time.Parse(dateFmt, endDate)
 	if err != nil {
-		return -1, -1, fmt.Errorf("invalid end date format: %w", err)
+		end = len(history)
 	}
 
 	if len(history) == 0 {
-		return 0, 0, fmt.Errorf("no history")
+		return start, end, fmt.Errorf("no history")
 	}
 
-	start := sort.Search(len(history), func(i int) bool {
-		return !history[i].date.Before(startDateParsed)
-	})
-	if start == len(history) {
-		return 0, 0, fmt.Errorf("no commits found from %s", startDate)
+	if start == -1 {
+		start = sort.Search(len(history), func(i int) bool {
+			return !history[i].date.Before(startDateParsed)
+		})
+		if start == len(history) {
+			return start, end, fmt.Errorf("no commits found from %s", startDate)
+		}
 	}
 
-	end := sort.Search(len(history), func(i int) bool {
-		return history[i].date.After(endDateParsed)
-	}) - 1
-	if end < 0 {
-		return 0, 0, fmt.Errorf("no commits found before %s", endDate)
+	if end == -1 {
+		end = sort.Search(len(history), func(i int) bool {
+			return history[i].date.After(endDateParsed)
+		}) - 1
+		if end < 0 {
+			return -1, -1, fmt.Errorf("no commits found before %s", endDate)
+		}
 	}
 
 	if start > end {
-		return 0, 0, fmt.Errorf("no commits in range")
+		return start, end, fmt.Errorf("no commits in range")
 	}
+
 	return start, end, nil
 }
 
@@ -134,26 +143,7 @@ func (r *GitRepository) getTaskMaps(history []historyEntry) ([]domain.TaskMap, e
 	return result, nil
 }
 
-func (r *GitRepository) GetTaskMapBefore(date string) (domain.TaskMap, error) {
-	history, err := r.getHistory()
-	if err != nil {
-		return nil, err
-	}
-
-	_, endIdx, err := r.getRange(history, history[0].date.Format(dateFmt), date)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := r.getTaskMaps(history[endIdx : endIdx+1])
-	if err != nil {
-		return nil, err
-	}
-
-	return result[0], nil
-}
-
-func (r *GitRepository) GetTaskMapsBetween(startDate, endDate string) ([]domain.TaskMap, error) {
+func (r *GitRepository) GetTaskDurationsBetween(startDate, endDate string) ([]domain.TaskDuration, error) {
 	history, err := r.getHistory()
 	if err != nil {
 		return nil, err
@@ -164,9 +154,59 @@ func (r *GitRepository) GetTaskMapsBetween(startDate, endDate string) ([]domain.
 		return nil, err
 	}
 
-	result, err := r.getTaskMaps(history[startIdx : endIdx+1])
+	historySlice := history[startIdx : endIdx+1]
+	taskMaps, err := r.getTaskMaps(historySlice)
 	if err != nil {
 		return nil, err
+	}
+
+	tasks := make(map[domain.TaskId]domain.TaskDuration)
+	for i, taskMap := range taskMaps {
+		commitDate := historySlice[i].date
+
+		currTasks := make(map[domain.TaskId]bool)
+		for taskID := range taskMap {
+			currTasks[taskID] = true
+		}
+
+		for taskID, task := range taskMap {
+			if taskDuration, exists := tasks[taskID]; exists {
+				taskDuration.Updates = task.Updates
+				taskDuration.Category = task.Category
+				taskDuration.ParentTasks = task.ParentTasks
+				taskDuration.Finished = task.Finished
+
+				if task.Finished && taskDuration.EndDate.IsZero() {
+					taskDuration.EndDate = commitDate
+				}
+
+				tasks[taskID] = taskDuration
+			} else {
+				tasks[taskID] = domain.TaskDuration{
+					Task: domain.Task{
+						Id:          taskID,
+						Title:       task.Title,
+						Updates:     task.Updates,
+						Finished:    task.Finished,
+						Category:    task.Category,
+						ParentTasks: task.ParentTasks,
+					},
+					StartDate: commitDate,
+				}
+			}
+		}
+
+		for taskID, taskDuration := range tasks {
+			if !currTasks[taskID] && !taskDuration.Finished && taskDuration.EndDate.IsZero() {
+				taskDuration.EndDate = commitDate
+				tasks[taskID] = taskDuration
+			}
+		}
+	}
+
+	result := make([]domain.TaskDuration, 0, len(tasks))
+	for _, td := range tasks {
+		result = append(result, td)
 	}
 
 	return result, nil
