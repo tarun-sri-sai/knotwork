@@ -85,7 +85,7 @@ func (r *GitRepository) getRange(history []historyEntry, startDate, endDate stri
 
 	endDateParsed, err := time.Parse(dateFmt, endDate)
 	if err != nil {
-		end = len(history)
+		end = len(history) - 1
 	}
 
 	if len(history) == 0 {
