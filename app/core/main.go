@@ -3,7 +3,11 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -32,12 +36,20 @@ func main() {
 
 	coreObj, err := NewCore(*repo, *repoDsn)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to initialize core: %v\n", err)
 	}
 
 	core = coreObj
 
 	r.Get("/todos", getTodosHandler)
 
-	http.ListenAndServe(":80", r)
+	port := 80
+	if s, ok := os.LookupEnv("PORT"); ok && s != "" {
+		if p, err := strconv.Atoi(s); err == nil && p > 0 && p <= 0xffff {
+			port = p
+		}
+	}
+
+	log.Printf("serving on port %d\n", port)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), r)
 }
