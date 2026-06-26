@@ -1,4 +1,4 @@
-module knotwork-core
+module knotwork
 
 go 1.26.3
 

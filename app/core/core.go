@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"knotwork-core/internal/todo/adapters"
-	"knotwork-core/internal/todo/ports"
+	"knotwork/internal/todo/adapters"
+	"knotwork/internal/todo/ports"
 )
 
 type Core struct {

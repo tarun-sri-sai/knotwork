@@ -1,7 +1,7 @@
 package ports
 
 import (
-	"knotwork-core/internal/todo/domain"
+	"knotwork/internal/todo/domain"
 )
 
 type Repository interface {
