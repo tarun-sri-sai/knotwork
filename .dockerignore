@@ -1,0 +1,13 @@
+**
+
+!app/
+!app/**
+
+!internal/
+!internal/**
+
+!.env*
+.env*.example
+
+!go.mod
+!go.sum

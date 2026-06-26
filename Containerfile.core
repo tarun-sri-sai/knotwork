@@ -1,0 +1,56 @@
+FROM golang:1.22.12 AS build
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y \
+    build-essential \
+    pkg-config \
+    cmake \
+    libssl-dev \
+    zlib1g-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --branch v1.5.0 --depth 1 https://github.com/libgit2/libgit2.git \
+    && cmake -S libgit2 -B libgit2/build \
+    -DBUILD_SHARED_LIBS=ON \
+    -DBUILD_TESTS=OFF \
+    && cmake --build libgit2/build --parallel \
+    && cmake --install libgit2/build \
+    && ldconfig \
+    && rm -rf libgit2
+
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    go mod download -x
+
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=bind,source=app,target=app \
+    --mount=type=bind,source=internal,target=internal \
+    --mount=type=bind,source=go.mod,target=go.mod \
+    --mount=type=bind,source=go.sum,target=go.sum \
+    go build -o /bin/server ./app/core
+
+FROM debian:bookworm-slim
+
+RUN apt-get update \
+    && apt-get install -y \
+    adduser \
+    ca-certificates \
+    tzdata \
+    git \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /usr/local/lib/libgit2.so* /usr/local/lib/
+RUN ldconfig
+
+COPY --from=build /bin/server /bin/
+
+RUN git config --global safe.directory '*'
+
+EXPOSE 80
+
+ENTRYPOINT [ "/bin/server" ]

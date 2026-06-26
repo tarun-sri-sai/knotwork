@@ -1,0 +1,10 @@
+services:
+  core:
+    command: [ "--repo", "${REPO_TYPE}", "--dsn", "/data" ]
+    build:
+      context: .
+      dockerfile: Containerfile.core
+    ports:
+      - 80:80
+    volumes:
+      - ${REPO_DSN}:/data

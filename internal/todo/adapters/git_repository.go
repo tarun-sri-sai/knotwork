@@ -2,7 +2,6 @@ package adapters
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 	"time"
@@ -10,8 +9,7 @@ import (
 	"knotwork/internal/todo/domain"
 	"knotwork/internal/todo/ports"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/libgit2/git2go/v34"
 )
 
 const dateFmt = "2006-01-02"
@@ -23,11 +21,11 @@ type GitRepository struct {
 
 type historyEntry struct {
 	date   time.Time
-	commit *object.Commit
+	commit *git.Commit
 }
 
 func NewGitRepository(repoPath string) (ports.Repository, error) {
-	repo, err := git.PlainOpen(repoPath)
+	repo, err := git.OpenRepository(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("open repo: %w", err)
 	}
@@ -36,35 +34,43 @@ func NewGitRepository(repoPath string) (ports.Repository, error) {
 }
 
 func (r *GitRepository) getHistory() ([]historyEntry, error) {
-	iter, err := r.gitRepo.Log(&git.LogOptions{
-		Order: git.LogOrderCommitterTime,
-	})
+	walk, err := r.gitRepo.Walk()
 	if err != nil {
-		return nil, fmt.Errorf("git log: %w", err)
+		return nil, fmt.Errorf("create revwalk: %w", err)
+	}
+	defer walk.Free()
+
+	if err := walk.PushHead(); err != nil {
+		return nil, fmt.Errorf("push HEAD: %w", err)
 	}
 
-	result := []historyEntry{}
-	for {
-		c, err := iter.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return result, nil
-		}
+	walk.Sorting(git.SortTime)
 
-		msg := strings.TrimSpace(c.Message)
+	var result []historyEntry
+
+	err = walk.Iterate(func(commit *git.Commit) bool {
+		msg := strings.TrimSpace(commit.Message())
+
 		date, err := time.Parse(dateFmt, msg)
 		if err != nil {
-			continue
+			return true
 		}
 
-		result = append(result, historyEntry{date: date, commit: c})
+		result = append(result, historyEntry{
+			date:   date,
+			commit: commit,
+		})
+
+		return true
+	})
+	if err != nil {
+		return nil, fmt.Errorf("walk commits: %w", err)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].date.Before(result[j].date)
 	})
+
 	return result, nil
 }
 
@@ -112,29 +118,31 @@ func (r *GitRepository) getRange(history []historyEntry, startDate, endDate stri
 }
 
 func (r *GitRepository) getTaskMaps(history []historyEntry) ([]domain.TaskMap, error) {
-	result := []domain.TaskMap{}
+	result := make([]domain.TaskMap, 0, len(history))
+
 	for _, h := range history {
 		commit := h.commit
 
-		file, err := commit.File(todoFile)
+		tree, err := commit.Tree()
 		if err != nil {
-			return nil, fmt.Errorf("get file from commit %s: %w", commit.Hash, err)
+			return nil, fmt.Errorf("get tree for commit %s: %w", commit.Id(), err)
+		}
+		defer tree.Free()
+
+		entry, err := tree.EntryByPath(todoFile)
+		if err != nil {
+			return nil, fmt.Errorf("get file from commit %s: %w", commit.Id(), err)
 		}
 
-		reader, err := file.Blob.Reader()
+		blob, err := r.gitRepo.LookupBlob(entry.Id)
 		if err != nil {
-			return nil, fmt.Errorf("get reader for file in commit %s: %w", commit.Hash, err)
+			return nil, fmt.Errorf("lookup blob in commit %s: %w", commit.Id(), err)
 		}
+		defer blob.Free()
 
-		text, err := io.ReadAll(reader)
-		reader.Close()
+		blockData, err := domain.ParseTodo(string(blob.Contents()))
 		if err != nil {
-			return nil, fmt.Errorf("read file content in commit %s: %w", commit.Hash, err)
-		}
-
-		blockData, err := domain.ParseTodo(string(text))
-		if err != nil {
-			return nil, fmt.Errorf("parse todo file in commit %s: %w", commit.Hash, err)
+			return nil, fmt.Errorf("parse todo file in commit %s: %w", commit.Id(), err)
 		}
 
 		result = append(result, blockData)
