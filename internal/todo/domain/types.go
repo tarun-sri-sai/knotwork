@@ -53,6 +53,6 @@ type TaskStats struct {
 }
 
 type TaskInfo struct {
-	TaskStats     TaskStats      `json:"taskStats"`
-	TaskDurations []TaskDuration `json:"taskDurations"`
+	TaskStats     TaskStats      `json:"stats"`
+	TaskDurations []TaskDuration `json:"durations"`
 }
