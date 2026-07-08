@@ -197,36 +197,26 @@ func (r *GitRepository) getTaskDurationsBetween(startDate, endDate time.Time) ([
 	return result, nil
 }
 
-func (r *GitRepository) getFinishedTaskDurationsBetween(startDate, endDate time.Time) ([]domain.TaskDuration, error) {
-	tasks, err := r.getTaskDurationsBetween(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *GitRepository) getFinishedTaskDurations(taskDurations []domain.TaskDuration) ([]domain.TaskDuration) {
 	var finishedTasks []domain.TaskDuration
-	for _, task := range tasks {
+	for _, task := range taskDurations {
 		if task.Finished {
 			finishedTasks = append(finishedTasks, task)
 		}
 	}
 
-	return finishedTasks, nil
+	return finishedTasks
 }
 
-func (r *GitRepository) getAbandonedTaskDurationsBetween(startDate, endDate time.Time) ([]domain.TaskDuration, error) {
-	tasks, err := r.getTaskDurationsBetween(startDate, endDate)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *GitRepository) getAbandonedTaskDurations(taskDurations []domain.TaskDuration) ([]domain.TaskDuration) {
 	var abandonedTasks []domain.TaskDuration
-	for _, task := range tasks {
+	for _, task := range taskDurations {
 		if !task.Finished && !task.EndDate.IsZero() {
 			abandonedTasks = append(abandonedTasks, task)
 		}
 	}
 
-	return abandonedTasks, nil
+	return abandonedTasks
 }
 
 func (r *GitRepository) getTaskDurationsByMinDays(taskDurations []domain.TaskDuration, minDays int) ([]domain.TaskDuration, error) {
@@ -378,12 +368,14 @@ func (r *GitRepository) GetFinishedTaskInfoBetween(startDate, endDate string, mi
 		return domain.TaskInfo{}, fmt.Errorf("parse end date: %w", err)
 	}
 
-	taskDurations, err := r.getFinishedTaskDurationsBetween(start, end)
+	taskDurations, err := r.getTaskDurationsBetween(start, end)
 	if err != nil {
-		return domain.TaskInfo{}, fmt.Errorf("get finished task durations: %w", err)
+		return domain.TaskInfo{}, fmt.Errorf("get task durations: %w", err)
 	}
 
-	filteredTaskDurations, err := r.getTaskDurationsByMinDays(taskDurations, minDays)
+	filteredTaskDurations := r.getFinishedTaskDurations(taskDurations)
+
+	filteredTaskDurations, err = r.getTaskDurationsByMinDays(filteredTaskDurations, minDays)
 	if err != nil {
 		return domain.TaskInfo{}, fmt.Errorf("filter task durations by min days: %w", err)
 	}
@@ -407,12 +399,14 @@ func (r *GitRepository) GetAbandonedTaskInfoBetween(startDate, endDate string, m
 		return domain.TaskInfo{}, fmt.Errorf("parse end date: %w", err)
 	}
 
-	taskDurations, err := r.getAbandonedTaskDurationsBetween(start, end)
+	taskDurations, err := r.getTaskDurationsBetween(start, end)
 	if err != nil {
-		return domain.TaskInfo{}, fmt.Errorf("get abandoned task durations: %w", err)
+		return domain.TaskInfo{}, fmt.Errorf("get task durations: %w", err)
 	}
 
-	filteredTaskDurations, err := r.getTaskDurationsByMinDays(taskDurations, minDays)
+	filteredTaskDurations := r.getAbandonedTaskDurations(taskDurations)
+
+	filteredTaskDurations, err = r.getTaskDurationsByMinDays(filteredTaskDurations, minDays)
 	if err != nil {
 		return domain.TaskInfo{}, fmt.Errorf("filter task durations by min days: %w", err)
 	}
