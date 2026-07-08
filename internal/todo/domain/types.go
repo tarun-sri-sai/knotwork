@@ -39,6 +39,20 @@ type TaskMap map[TaskId]Task
 
 type TaskDuration struct {
 	Task
-	StartDate   time.Time `json:"startDate"`
-	EndDate     time.Time `json:"endDate"`
+	StartDate time.Time `json:"startDate"`
+	EndDate   time.Time `json:"endDate"`
+}
+
+type TaskStats struct {
+	TotalTasks          int    `json:"totalTasks"`
+	LongestTaskId       TaskId `json:"longestTaskId"`
+	AverageTaskDuration int    `json:"averageTaskDuration"`
+	MedianTaskDuration  int    `json:"medianTaskDuration"`
+	MostActiveTaskId    TaskId `json:"mostActiveTaskId"`
+	MostActiveCategory  string `json:"mostActiveCategory"`
+}
+
+type TaskInfo struct {
+	TaskStats     TaskStats      `json:"taskStats"`
+	TaskDurations []TaskDuration `json:"taskDurations"`
 }

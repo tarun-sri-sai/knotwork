@@ -10,6 +10,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
+
+	"knotwork/internal/todo/domain"
 )
 
 var core *Core
@@ -18,13 +20,47 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 	startDate := r.URL.Query().Get("startDate")
 	endDate := r.URL.Query().Get("endDate")
 
-	res, err := core.repository.GetTaskDurationsBetween(startDate, endDate)
+	minDaysStr := r.URL.Query().Get("minDays")
+	minDays := 0
+	var err error
+	if minDaysStr != "" {
+		minDays, err = strconv.Atoi(minDaysStr)
+		if err != nil {
+			http.Error(w, "invalid minDays parameter", http.StatusBadRequest)
+			return
+		}
+	}
+
+	taskType := r.URL.Query().Get("type")
+
+	var taskInfo domain.TaskInfo
+	switch taskType {
+	case "finished":
+		taskInfo, err = core.repository.GetFinishedTaskInfoBetween(startDate, endDate, minDays)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	case "abandoned":
+		taskInfo, err = core.repository.GetAbandonedTaskInfoBetween(startDate, endDate, minDays)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	default:
+		taskInfo, err = core.repository.GetTaskInfoBetween(startDate, endDate, minDays)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(taskInfo)
 }
 
 func main() {

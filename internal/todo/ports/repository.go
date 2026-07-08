@@ -5,5 +5,7 @@ import (
 )
 
 type Repository interface {
-	GetTaskDurationsBetween(startDate, endDate string) ([]domain.TaskDuration, error)
+	GetTaskInfoBetween(startDate, endDate string, minDays int) (domain.TaskInfo, error)
+	GetFinishedTaskInfoBetween(startDate, endDate string, minDays int) (domain.TaskInfo, error)
+	GetAbandonedTaskInfoBetween(startDate, endDate string, minDays int) (domain.TaskInfo, error)
 }
