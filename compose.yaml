@@ -1,10 +1,14 @@
 services:
   core:
-    command: [ "--repo", "${REPO_TYPE}", "--dsn", "/data" ]
     build:
       context: .
-      dockerfile: Containerfile.core
+      dockerfile: app/core/Containerfile
+    env_file:
+      - app/core/.env
     ports:
       - 80:80
     volumes:
-      - ${REPO_DSN}:/data
+      - "knotwork-repo:/data"
+volumes:
+  knotwork-repo:
+    external: true

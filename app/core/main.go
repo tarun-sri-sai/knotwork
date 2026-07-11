@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -64,13 +63,12 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	repo := flag.String("repo", "", "repo type (e.g., git)")
-	repoDsn := flag.String("dsn", "", "repo connection string")
-	flag.Parse()
+	repo := os.Getenv("REPO_TYPE")
+	repoDsn := os.Getenv("REPO_DSN")
 
 	r := chi.NewRouter()
 
-	coreObj, err := NewCore(*repo, *repoDsn)
+	coreObj, err := NewCore(repo, repoDsn)
 	if err != nil {
 		log.Fatalf("failed to initialize core: %v\n", err)
 	}
