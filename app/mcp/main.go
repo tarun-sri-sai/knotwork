@@ -76,9 +76,7 @@ func Todos(ctx context.Context, req *mcp.CallToolRequest, todosInput TodosInput)
 		return nil, TodosOutput{}, fmt.Errorf("decode core todos response: %w", err)
 	}
 
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{&mcp.TextContent{Text: "retrieved todos"}},
-	}, TodosOutput{TaskInfo: taskInfo}, nil
+	return &mcp.CallToolResult{}, TodosOutput{TaskInfo: taskInfo}, nil
 }
 
 func main() {
