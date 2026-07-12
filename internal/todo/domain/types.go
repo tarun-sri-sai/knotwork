@@ -18,7 +18,7 @@ type Task struct {
 type TaskDuration struct {
 	Task
 	StartDate time.Time `json:"startDate"`
-	EndDate   time.Time `json:"endDate"`
+	EndDate   time.Time `json:"endDate,omitzero"`
 }
 
 type TaskStats struct {
