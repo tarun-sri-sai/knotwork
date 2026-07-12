@@ -89,7 +89,7 @@ func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]histo
 	if endDate.IsZero() {
 		end = len(r.history) - 1
 	} else {
-		end := sort.Search(len(r.history), func(i int) bool {
+		end = sort.Search(len(r.history), func(i int) bool {
 			return r.history[i].date.After(endDate)
 		}) - 1
 		if end < 0 {
