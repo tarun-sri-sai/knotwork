@@ -1,0 +1,19 @@
+FROM golang:1.26.3 AS build
+
+WORKDIR /app
+
+ENV CGO_ENABLED=0
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN go build -o /bin/mcp ./app/mcp
+
+FROM alpine
+
+COPY --from=build /bin/mcp /bin/mcp
+
+EXPOSE 80
+
+ENTRYPOINT [ "/bin/mcp" ]

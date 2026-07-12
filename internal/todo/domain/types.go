@@ -34,3 +34,11 @@ type TaskInfo struct {
 	TaskStats     TaskStats      `json:"stats"`
 	TaskDurations []TaskDuration `json:"durations"`
 }
+
+type TaskType string
+
+const (
+	Finished  TaskType = "finished"
+	Abandoned TaskType = "abandoned"
+	Default TaskType = ""
+)

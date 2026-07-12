@@ -44,26 +44,29 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 
 	var taskInfo domain.TaskInfo
 
-	taskType := r.URL.Query().Get("type")
+	taskType := domain.TaskType(r.URL.Query().Get("type"))
 	switch taskType {
-	case "finished":
+	case domain.Finished:
 		taskInfo, err = domain.GetFinishedTaskInfoBetween(taskDurations, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-	case "abandoned":
+	case domain.Abandoned:
 		taskInfo, err = domain.GetAbandonedTaskInfoBetween(taskDurations, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-	default:
+	case domain.Default:
 		taskInfo, err = domain.GetTaskInfoBetween(taskDurations, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+	default:
+		http.Error(w, "invalid task type", http.StatusBadRequest)
+		return
 	}
 
 	if err != nil {
