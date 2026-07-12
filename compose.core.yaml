@@ -1,0 +1,14 @@
+services:
+  core:
+    build:
+      context: .
+      dockerfile: app/core/Containerfile
+    env_file:
+      - app/core/.env
+    ports:
+      - 80:80
+    volumes:
+      - "knotwork-repo:/data"
+volumes:
+  knotwork-repo:
+    external: true
