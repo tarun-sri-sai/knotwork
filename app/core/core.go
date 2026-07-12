@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"knotwork/internal/todo/adapters"
+	"knotwork/internal/todo/adapters/git"
 	"knotwork/internal/todo/ports"
 )
 
@@ -13,7 +13,7 @@ type Core struct {
 
 func NewCore(repoType string, repoDsn string) (*Core, error) {
 	repositoryAdapters := map[string]func(string) (ports.Repository, error){
-		"git": adapters.NewGitRepository,
+		"git": git.NewGitRepository,
 	}
 
 	repoAdapterFunc, ok := repositoryAdapters[repoType]

@@ -16,8 +16,8 @@ import (
 var core *Core
 
 func getTodosHandler(w http.ResponseWriter, r *http.Request) {
-	startDate := r.URL.Query().Get("startDate")
-	endDate := r.URL.Query().Get("endDate")
+	startDateStr := r.URL.Query().Get("startDate")
+	endDateStr := r.URL.Query().Get("endDate")
 
 	minDaysStr := r.URL.Query().Get("minDays")
 	minDays := 0
@@ -30,24 +30,36 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	taskType := r.URL.Query().Get("type")
+	endDate, err := core.repository.ParseDate(endDateStr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("parse end date: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
+
+	taskDurations, err := core.repository.GetTaskDurationsBetween(startDateStr, endDateStr)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("get task data: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
 
 	var taskInfo domain.TaskInfo
+
+	taskType := r.URL.Query().Get("type")
 	switch taskType {
 	case "finished":
-		taskInfo, err = core.repository.GetFinishedTaskInfoBetween(startDate, endDate, minDays)
+		taskInfo, err = domain.GetFinishedTaskInfoBetween(taskDurations, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	case "abandoned":
-		taskInfo, err = core.repository.GetAbandonedTaskInfoBetween(startDate, endDate, minDays)
+		taskInfo, err = domain.GetAbandonedTaskInfoBetween(taskDurations, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	default:
-		taskInfo, err = core.repository.GetTaskInfoBetween(startDate, endDate, minDays)
+		taskInfo, err = domain.GetTaskInfoBetween(taskDurations, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

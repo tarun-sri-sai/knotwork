@@ -1,4 +1,4 @@
-package domain
+package git
 
 import (
 	"crypto/sha1"
@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"knotwork/internal/todo/domain"
 )
 
 func normalize(text string) string {
@@ -78,8 +80,8 @@ func parseBlocks(blocks [][]string) ([]block, error) {
 		if isCategoryBlock(bl) {
 			hash := sha1.Sum([]byte(bl[1]))
 			blockData = append(blockData, category{
-				Category: bl[1],
-				Id:       hex.EncodeToString(hash[:]),
+				category: bl[1],
+				id:       hex.EncodeToString(hash[:]),
 			})
 			continue
 		}
@@ -96,11 +98,11 @@ func parseBlocks(blocks [][]string) ([]block, error) {
 
 		hash := sha1.Sum([]byte(blockLines[0]))
 		blockData = append(blockData, task{
-			Level:    indent,
-			Title:    blockLines[0],
-			Updates:  blockLines[1:],
-			Id:       hex.EncodeToString(hash[:]),
-			Finished: finished,
+			level:    indent,
+			title:    blockLines[0],
+			updates:  blockLines[1:],
+			id:       hex.EncodeToString(hash[:]),
+			finished: finished,
 		})
 	}
 
@@ -116,13 +118,13 @@ func validateHeirarchy(blockData []block) error {
 		if categoryBlock, ok := bl.(category); ok {
 			firstBlock = true
 			currIndents = []int{-1}
-			currCategory = categoryBlock.Category
+			currCategory = categoryBlock.category
 			continue
 		}
 
 		taskBlock, _ := bl.(task)
 
-		level := taskBlock.Level
+		level := taskBlock.level
 
 		if firstBlock && level > 0 {
 			return fmt.Errorf("invalid first task for %s", currCategory)
@@ -133,7 +135,7 @@ func validateHeirarchy(blockData []block) error {
 		}
 
 		if level-1 != currIndents[len(currIndents)-1] {
-			return fmt.Errorf(`invalid parent task for "%s"`, taskBlock.Title)
+			return fmt.Errorf(`invalid parent task for "%s"`, taskBlock.title)
 		}
 
 		currIndents = append(currIndents, level)
@@ -156,22 +158,22 @@ func validateBlockData(blockData []block) error {
 	return nil
 }
 
-func buildTaskMap(blockData []block) TaskMap {
-	result := make(TaskMap)
+func buildTaskMap(blockData []block) taskMap {
+	result := make(taskMap)
 	currCategory := ""
 	categorySet := false
 
 	dummyTask := task{
-		Id:    "",
-		Level: -1,
-		Title: "",
-		Updates: []string{},
-		Finished: false,
+		id:       "",
+		level:    -1,
+		title:    "",
+		updates:  []string{},
+		finished: false,
 	}
 	currParents := []task{dummyTask}
 	for _, bl := range blockData {
 		if categoryBlock, ok := bl.(category); ok {
-			currCategory = categoryBlock.Category
+			currCategory = categoryBlock.category
 			categorySet = true
 			currParents = []task{dummyTask}
 			continue
@@ -179,10 +181,10 @@ func buildTaskMap(blockData []block) TaskMap {
 
 		taskBlock, _ := bl.(task)
 
-		currentTask := Task{
-			Title: taskBlock.Title,
-			Updates: taskBlock.Updates,
-			Finished: taskBlock.Finished,
+		currentTask := domain.Task{
+			Title:    taskBlock.title,
+			Updates:  taskBlock.updates,
+			Finished: taskBlock.finished,
 		}
 
 		if categorySet {
@@ -190,38 +192,38 @@ func buildTaskMap(blockData []block) TaskMap {
 		}
 
 		for len(currParents) > 0 &&
-			currParents[len(currParents)-1].Level >= taskBlock.Level {
+			currParents[len(currParents)-1].level >= taskBlock.level {
 			currParents = currParents[:len(currParents)-1]
 		}
 
 		h := sha1.New()
 		for _, parent := range currParents[1:] {
-			h.Write([]byte(parent.Id))
+			h.Write([]byte(parent.id))
 		}
-		h.Write([]byte(taskBlock.Id))
+		h.Write([]byte(taskBlock.id))
 		taskId := hex.EncodeToString(h.Sum(nil))
-		currentTask.Id = TaskId(taskId)
+		currentTask.Id = domain.TaskId(taskId)
 
 		parentTitles := []string{}
-		finished := taskBlock.Finished
+		finished := taskBlock.finished
 		for _, parent := range currParents[1:] {
-			parentTitles = append(parentTitles, parent.Title)
+			parentTitles = append(parentTitles, parent.title)
 
-			if parent.Finished {
+			if parent.finished {
 				finished = true
 			}
 		}
 		currentTask.ParentTasks = parentTitles
 		currentTask.Finished = finished
 
-		result[TaskId(taskId)] = currentTask
+		result[domain.TaskId(taskId)] = currentTask
 		currParents = append(currParents, taskBlock)
 	}
 
 	return result
 }
 
-func ParseTodo(text string) (TaskMap, error) {
+func ParseTodo(text string) (taskMap, error) {
 	text = normalize(text)
 	blocks := splitBlocks(text)
 

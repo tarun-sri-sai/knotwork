@@ -1,11 +1,12 @@
 package ports
 
 import (
+	"time"
+
 	"knotwork/internal/todo/domain"
 )
 
 type Repository interface {
-	GetTaskInfoBetween(startDate, endDate string, minDays int) (domain.TaskInfo, error)
-	GetFinishedTaskInfoBetween(startDate, endDate string, minDays int) (domain.TaskInfo, error)
-	GetAbandonedTaskInfoBetween(startDate, endDate string, minDays int) (domain.TaskInfo, error)
+	ParseDate(dateStr string) (time.Time, error)
+	GetTaskDurationsBetween(startDateStr, endDateStr string) ([]domain.TaskDuration, error)
 }
