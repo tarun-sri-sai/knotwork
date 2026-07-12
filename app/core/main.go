@@ -71,7 +71,10 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(taskInfo)
+	if err := json.NewEncoder(w).Encode(taskInfo); err != nil {
+		http.Error(w, fmt.Sprintf("encode response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func main() {
@@ -97,5 +100,7 @@ func main() {
 	}
 
 	log.Printf("serving on port %d\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), r)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), r); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -3,6 +3,7 @@ package git
 import (
 	"fmt"
 	"io"
+	"log"
 	"sort"
 	"strings"
 	"time"
@@ -69,7 +70,7 @@ func NewGitRepository(repoPath string) (ports.Repository, error) {
 }
 
 func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]historyEntry, error) {
-	start, end := -1, -1
+	var start, end int
 
 	if len(r.history) == 0 {
 		return []historyEntry{}, fmt.Errorf("no history")
@@ -120,13 +121,18 @@ func (r *GitRepository) getTaskMapRecords(startDate, endDate time.Time) ([]taskM
 			return nil, fmt.Errorf("get file from commit %s: %w", commit.Hash, err)
 		}
 
-		reader, err := file.Blob.Reader()
+		reader, err := file.Reader()
 		if err != nil {
 			return nil, fmt.Errorf("get reader for file in commit %s: %w", commit.Hash, err)
 		}
 
+		defer func() {
+			if err := reader.Close(); err != nil {
+				log.Printf("failed to close reader: %s\n", err.Error())
+			}
+		}()
+
 		text, err := io.ReadAll(reader)
-		reader.Close()
 		if err != nil {
 			return nil, fmt.Errorf("read file content in commit %s: %w", commit.Hash, err)
 		}
