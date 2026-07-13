@@ -8,7 +8,4 @@ services:
     ports:
       - 80:80
     volumes:
-      - "knotwork-repo:/data"
-volumes:
-  knotwork-repo:
-    external: true
+      - "./to-do:/data"
