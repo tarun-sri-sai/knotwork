@@ -40,5 +40,5 @@ type TaskType string
 const (
 	Finished  TaskType = "finished"
 	Abandoned TaskType = "abandoned"
-	Default TaskType = ""
+	Default   TaskType = ""
 )

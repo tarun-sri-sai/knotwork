@@ -13,8 +13,6 @@ services:
       dockerfile: app/mcp/Containerfile
     depends_on:
       - core
-    ports:
-      - 80:80
 volumes:
   knotwork-repo:
     external: true

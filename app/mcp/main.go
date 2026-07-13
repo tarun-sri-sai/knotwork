@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -84,24 +83,7 @@ func main() {
 
 	mcp.AddTool(server, &mcp.Tool{Name: "todos", Description: "get todos of the user"}, Todos)
 
-	transport := &mcp.StreamableServerTransport{}
-	go func() {
-		if err := server.Run(context.Background(), transport); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	
-	http.Handle("/mcp", transport)
-
-	port := 80
-	if s, ok := os.LookupEnv("PORT"); ok && s != "" {
-		if p, err := strconv.Atoi(s); err == nil && p > 0 && p <= 0xffff {
-			port = p
-		}
-	}
-
-	log.Printf("serving on port %d\n", port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), transport); err != nil {
+	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)
 	}
 }
