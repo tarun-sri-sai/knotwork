@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"knotwork/internal/todo/domain"
+	"knotwork-core/internal/domain"
 )
 
 func normalize(text string) string {

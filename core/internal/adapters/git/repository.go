@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"knotwork/internal/todo/domain"
-	"knotwork/internal/todo/ports"
+	"knotwork-core/internal/domain"
+	"knotwork-core/internal/ports"
 
 	"github.com/go-git/go-git/v5"
 )

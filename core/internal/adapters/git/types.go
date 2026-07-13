@@ -3,7 +3,7 @@ package git
 import (
 	"time"
 
-	"knotwork/internal/todo/domain"
+	"knotwork-core/internal/domain"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
 )

@@ -3,7 +3,7 @@ package ports
 import (
 	"time"
 
-	"knotwork/internal/todo/domain"
+	"knotwork-core/internal/domain"
 )
 
 type Repository interface {

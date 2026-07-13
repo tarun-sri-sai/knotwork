@@ -1,8 +1,8 @@
 services:
   core:
     build:
-      context: .
-      dockerfile: app/core/Containerfile
+      context: core
+      dockerfile: Containerfile
     env_file:
       - app/core/.env
     ports:

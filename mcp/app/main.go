@@ -11,21 +11,19 @@ import (
 	"strconv"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-
-	"knotwork/internal/todo/domain"
 )
 
 const coreBaseURL = "http://core:80"
 
 type TodosInput struct {
-	StartDate string          `json:"startDate,omitempty" jsonschema:"date from when to find to-do's"`
-	EndDate   string          `json:"endDate,omitempty" jsonschema:"date till when to find to-do's"`
-	MinDays   int             `json:"minDays,omitempty" jsonschema:"minimum age of a finished/abandoned to-do for it to be included in the result"`
-	Type      domain.TaskType `json:"type,omitempty" jsonschema:"type of task (\"\", \"abandoned\", \"finished\")"`
+	StartDate string `json:"startDate,omitempty" jsonschema:"date from when to find to-do's"`
+	EndDate   string `json:"endDate,omitempty" jsonschema:"date till when to find to-do's"`
+	MinDays   int    `json:"minDays,omitempty" jsonschema:"minimum age of a finished/abandoned to-do for it to be included in the result"`
+	Type      string `json:"type,omitempty" jsonschema:"type of task (\"\", \"abandoned\", \"finished\")"`
 }
 
 type TodosOutput struct {
-	TaskInfo domain.TaskInfo `json:"taskInfo" jsonschema:"task info containing the stats and task details"`
+	TaskInfo map[string]any `json:"taskInfo" jsonschema:"task info containing the stats and task details"`
 }
 
 func Todos(ctx context.Context, req *mcp.CallToolRequest, todosInput TodosInput) (*mcp.CallToolResult, TodosOutput, error) {
@@ -70,7 +68,7 @@ func Todos(ctx context.Context, req *mcp.CallToolRequest, todosInput TodosInput)
 		return nil, TodosOutput{}, fmt.Errorf("core todos request failed: %s: %s", resp.Status, string(body))
 	}
 
-	var taskInfo domain.TaskInfo
+	var taskInfo map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&taskInfo); err != nil {
 		return nil, TodosOutput{}, fmt.Errorf("decode core todos response: %w", err)
 	}

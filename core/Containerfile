@@ -8,12 +8,12 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o /bin/mcp ./app/mcp
+RUN go build -o /bin/core ./app
 
 FROM alpine
 
-COPY --from=build /bin/mcp /bin/mcp
+COPY --from=build /bin/core /bin/core
 
 EXPOSE 80
 
-ENTRYPOINT [ "/bin/mcp" ]
+ENTRYPOINT [ "/bin/core" ]

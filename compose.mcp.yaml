@@ -1,15 +1,15 @@
 services:
   core:
     build:
-      context: .
-      dockerfile: app/core/Containerfile
+      context: core
+      dockerfile: Containerfile
     env_file:
-      - app/core/.env
+      - core/.env
     volumes:
       - "./to-do:/data"
   mcp:
     build:
-      context: .
-      dockerfile: app/mcp/Containerfile
+      context: mcp
+      dockerfile: Containerfile
     depends_on:
       - core

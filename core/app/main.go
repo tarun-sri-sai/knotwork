@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"knotwork/internal/todo/domain"
+	"knotwork-core/internal/domain"
 )
 
 var core *Core
