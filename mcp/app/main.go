@@ -8,12 +8,19 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-const coreBaseURL = "http://core:80"
+corePort := 80
+if s, ok := os.LookupEnv("CORE_PORT"); ok && s != "" {
+	if p, err := strconv.Atoi(s); err == nil && p > 0 && p <= 0xffff {
+		corePort = p
+	}
+}
+const coreBaseURL = fmt.Sprintf("http://core:%d", corePort)
 
 type TodosInput struct {
 	StartDate string `json:"startDate,omitempty" jsonschema:"date from when to find to-do's"`

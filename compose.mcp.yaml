@@ -7,3 +7,5 @@ services:
       dockerfile: Containerfile
     depends_on:
       - core
+    env_file:
+      - mcp/.env
