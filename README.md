@@ -10,9 +10,8 @@ Progress tracking made faster, simpler, and better.
 - [Docker Compose](https://docs.docker.com/compose)
 - [Git](https://git-scm.com)\*
 
-> Note:
->
-> 1. \* Required based on repo type selected
+> [!NOTE]
+> \* Required based on repo type selected
 
 ### Repositories
 
