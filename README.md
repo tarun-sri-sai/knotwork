@@ -104,7 +104,7 @@ The `to-do.txt` contents must follow the syntax rules mentioned below. Any commi
 
 #### MCP Server Usage with Git Repository
 
-1. You can edit the repo path in the volume bind for `/data` in `compose.mcp.yaml` under the `core` service to point to your Git repo.
+1. You can edit the repo path in the volume bind for `/data` in `compose.core.include.yaml` under the `core` service to point to your Git repo.
 
 2. Run this command to start the MCP server:
 
