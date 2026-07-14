@@ -4,7 +4,7 @@ Progress tracking made faster, simpler, and better.
 
 ## Prerequisites
 
-### Software
+### Software Prerequisites
 
 - [Docker](https://www.docker.com)
 - [Docker Compose](https://docs.docker.com/compose)
@@ -16,13 +16,13 @@ Progress tracking made faster, simpler, and better.
 
 ### Repositories
 
-#### Git
+#### Git Repository
 
-##### Setup
+##### Setup Git Repository
 
 To set up the `git` repo type for knotwork, initialize a Git repo that contains a file called `to-do.txt` at the root of the repo. Setup a workflow that makes a commit to this repo daily with the commit message being the date in `YYYY-MM-dd` format of the day before. You can also manually do it. It is not required that a snapshot is present for every day, but it is required that all commits have unique dates.
 
-##### Syntax
+##### Git Repository Syntax
 
 The `to-do.txt` contents must follow the syntax rules mentioned below. Any commit where the contents do not match the syntax will be ignored.
 
@@ -100,9 +100,9 @@ The `to-do.txt` contents must follow the syntax rules mentioned below. Any commi
 
 ## Usage
 
-### MCP Server
+### MCP Server Usage
 
-#### Git Repository
+#### MCP Server Usage with Git Repository
 
 1. You can edit the repo path in the volume bind for `/data` in `compose.mcp.yaml` under the `core` service to point to your Git repo.
 
