@@ -1,12 +1,6 @@
+include:
+  - compose.core.include.yaml
 services:
-  core:
-    build:
-      context: core
-      dockerfile: Containerfile
-    env_file:
-      - core/.env
-    volumes:
-      - "./to-do:/data"
   mcp:
     build:
       context: mcp
