@@ -1,11 +1,6 @@
+include:
+  - compose.core.include.yaml
 services:
   core:
-    build:
-      context: core
-      dockerfile: Containerfile
-    env_file:
-      - app/core/.env
     ports:
       - 80:80
-    volumes:
-      - "./to-do:/data"
