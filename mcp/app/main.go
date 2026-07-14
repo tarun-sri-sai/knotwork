@@ -14,14 +14,6 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-corePort := 80
-if s, ok := os.LookupEnv("CORE_PORT"); ok && s != "" {
-	if p, err := strconv.Atoi(s); err == nil && p > 0 && p <= 0xffff {
-		corePort = p
-	}
-}
-const coreBaseURL = fmt.Sprintf("http://core:%d", corePort)
-
 type TodosInput struct {
 	StartDate string `json:"startDate,omitempty" jsonschema:"date from when to find to-do's"`
 	EndDate   string `json:"endDate,omitempty" jsonschema:"date till when to find to-do's"`
@@ -33,8 +25,19 @@ type TodosOutput struct {
 	TaskInfo map[string]any `json:"taskInfo" jsonschema:"task info containing the stats and task details"`
 }
 
+func getCoreBaseURL() string {
+	corePort := 80
+	if s, ok := os.LookupEnv("CORE_PORT"); ok && s != "" {
+		if p, err := strconv.Atoi(s); err == nil && p > 0 && p <= 0xffff {
+			corePort = p
+		}
+	}
+
+	return fmt.Sprintf("http://core:%d", corePort)
+}
+
 func Todos(ctx context.Context, req *mcp.CallToolRequest, todosInput TodosInput) (*mcp.CallToolResult, TodosOutput, error) {
-	endpoint, err := url.Parse(coreBaseURL + "/todos")
+	endpoint, err := url.Parse(getCoreBaseURL() + "/todos")
 	if err != nil {
 		return nil, TodosOutput{}, fmt.Errorf("build core todos URL: %w", err)
 	}
