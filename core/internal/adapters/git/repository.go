@@ -19,11 +19,19 @@ const todoFile = "to-do.txt"
 
 type GitRepository struct {
 	gitRepo *git.Repository
-	history []historyEntry
 }
 
-func getHistory(gitRepo *git.Repository) ([]historyEntry, error) {
-	iter, err := gitRepo.Log(&git.LogOptions{
+func NewGitRepository(repoPath string) (ports.Repository, error) {
+	repo, err := git.PlainOpen(repoPath)
+	if err != nil {
+		return nil, fmt.Errorf("open repo: %w", err)
+	}
+
+	return &GitRepository{gitRepo: repo}, nil
+}
+
+func (r *GitRepository) getHistory() ([]historyEntry, error) {
+	iter, err := r.gitRepo.Log(&git.LogOptions{
 		Order: git.LogOrderCommitterTime,
 	})
 	if err != nil {
@@ -55,43 +63,34 @@ func getHistory(gitRepo *git.Repository) ([]historyEntry, error) {
 	return result, nil
 }
 
-func NewGitRepository(repoPath string) (ports.Repository, error) {
-	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return nil, fmt.Errorf("open repo: %w", err)
-	}
+func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]historyEntry, error) {
+	var start, end int
 
-	history, err := getHistory(repo)
+	history, err := r.getHistory()
 	if err != nil {
 		return nil, fmt.Errorf("get repo history: %w", err)
 	}
 
-	return &GitRepository{gitRepo: repo, history: history}, nil
-}
-
-func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]historyEntry, error) {
-	var start, end int
-
-	if len(r.history) == 0 {
+	if len(history) == 0 {
 		return []historyEntry{}, fmt.Errorf("no history")
 	}
 
 	if startDate.IsZero() {
 		start = 0
 	} else {
-		start = sort.Search(len(r.history), func(i int) bool {
-			return !r.history[i].date.Before(startDate)
+		start = sort.Search(len(history), func(i int) bool {
+			return !history[i].date.Before(startDate)
 		})
-		if start == len(r.history) {
+		if start == len(history) {
 			return []historyEntry{}, fmt.Errorf("no commits found from %s", startDate)
 		}
 	}
 
 	if endDate.IsZero() {
-		end = len(r.history) - 1
+		end = len(history) - 1
 	} else {
-		end = sort.Search(len(r.history), func(i int) bool {
-			return r.history[i].date.After(endDate)
+		end = sort.Search(len(history), func(i int) bool {
+			return history[i].date.After(endDate)
 		}) - 1
 		if end < 0 {
 			return []historyEntry{}, fmt.Errorf("no commits found before %s", endDate)
@@ -102,7 +101,7 @@ func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]histo
 		return []historyEntry{}, fmt.Errorf("no commits in range")
 	}
 
-	return r.history[start : end+1], nil
+	return history[start : end+1], nil
 }
 
 func (r *GitRepository) getTaskMapRecords(startDate, endDate time.Time) ([]taskMapRecord, error) {
