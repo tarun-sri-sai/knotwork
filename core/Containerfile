@@ -14,6 +14,4 @@ FROM alpine
 
 COPY --from=build /bin/core /bin/core
 
-EXPOSE 80
-
 ENTRYPOINT [ "/bin/core" ]
