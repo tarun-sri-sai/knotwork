@@ -36,7 +36,7 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	taskDurations, err := core.repository.GetTaskDurationsBetween(startDateStr, endDateStr)
+	tasks, err := core.repository.GetTasksBetween(startDateStr, endDateStr)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("get task data: %s", err.Error()), http.StatusBadRequest)
 		return
@@ -46,20 +46,20 @@ func getTodosHandler(w http.ResponseWriter, r *http.Request) {
 
 	taskType := domain.TaskType(r.URL.Query().Get("type"))
 	switch taskType {
-	case domain.Finished:
-		taskInfo, err = domain.GetFinishedTaskInfoBetween(taskDurations, endDate, minDays)
+	case domain.TaskTypeFinished:
+		taskInfo, err = domain.GetFinishedTaskInfoBetween(tasks, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-	case domain.Abandoned:
-		taskInfo, err = domain.GetAbandonedTaskInfoBetween(taskDurations, endDate, minDays)
+	case domain.TaskTypeAbandoned:
+		taskInfo, err = domain.GetAbandonedTaskInfoBetween(tasks, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-	case domain.Default:
-		taskInfo, err = domain.GetTaskInfoBetween(taskDurations, endDate, minDays)
+	case domain.TaskTypeAll:
+		taskInfo, err = domain.GetTaskInfoBetween(tasks, endDate, minDays)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

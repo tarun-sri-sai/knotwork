@@ -12,10 +12,16 @@ import (
 	"knotwork-core/internal/ports"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 const dateFmt = "2006-01-02"
 const todoFile = "to-do.txt"
+
+type historyEntry struct {
+	date   time.Time
+	commit *object.Commit
+}
 
 type GitRepository struct {
 	gitRepo *git.Repository
@@ -104,13 +110,13 @@ func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]histo
 	return history[start : end+1], nil
 }
 
-func (r *GitRepository) getTaskMapRecords(startDate, endDate time.Time) ([]taskMapRecord, error) {
+func (r *GitRepository) getTaskMapsDated(startDate, endDate time.Time) ([]parsedTaskMapDated, error) {
 	historySlice, err := r.getHistoryBetween(startDate, endDate)
 	if err != nil {
 		return nil, fmt.Errorf("get task history in date range: %s", err)
 	}
 
-	result := make([]taskMapRecord, 0, len(historySlice))
+	result := make([]parsedTaskMapDated, 0, len(historySlice))
 
 	for _, h := range historySlice {
 		commit := h.commit
@@ -141,7 +147,7 @@ func (r *GitRepository) getTaskMapRecords(startDate, endDate time.Time) ([]taskM
 			return nil, fmt.Errorf("parse todo file in commit %s: %w", commit.Hash, err)
 		}
 
-		result = append(result, taskMapRecord{taskMap: blockData, date: h.date})
+		result = append(result, parsedTaskMapDated{taskMap: blockData, date: h.date})
 	}
 
 	return result, nil
@@ -160,67 +166,65 @@ func (r *GitRepository) ParseDate(dateStr string) (time.Time, error) {
 	return parsed, nil
 }
 
-func (r *GitRepository) GetTaskDurationsBetween(startDateStr, endDateStr string) ([]domain.TaskDuration, error) {
+func (r *GitRepository) GetTasksBetween(startDateStr, endDateStr string) ([]domain.Task, error) {
 	startDate, err := r.ParseDate(startDateStr)
 	if err != nil {
-		return []domain.TaskDuration{}, fmt.Errorf("parse start date: %w", err)
+		return []domain.Task{}, fmt.Errorf("parse start date: %w", err)
 	}
 
 	endDate, err := r.ParseDate(endDateStr)
 	if err != nil {
-		return []domain.TaskDuration{}, fmt.Errorf("parse end date: %w", err)
+		return []domain.Task{}, fmt.Errorf("parse end date: %w", err)
 	}
 
-	taskMapRecords, err := r.getTaskMapRecords(startDate, endDate)
+	taskMapsDated, err := r.getTaskMapsDated(startDate, endDate)
 	if err != nil {
-		return nil, fmt.Errorf("get task map records: %s", err)
+		return nil, fmt.Errorf("get task maps dated: %s", err)
 	}
 
-	tasks := make(map[domain.TaskId]domain.TaskDuration)
-	for _, taskMapRecord := range taskMapRecords {
-		commitDate := taskMapRecord.date
+	tasks := make(map[domain.TaskId]domain.Task)
+	for _, taskMapDated := range taskMapsDated {
+		commitDate := taskMapDated.date
 
 		currTasks := make(map[domain.TaskId]bool)
-		for taskID := range taskMapRecord.taskMap {
+		for taskID := range taskMapDated.taskMap {
 			currTasks[taskID] = true
 		}
 
-		for taskID, task := range taskMapRecord.taskMap {
-			if taskDuration, exists := tasks[taskID]; exists {
-				taskDuration.Updates = task.Updates
-				taskDuration.Category = task.Category
-				taskDuration.ParentTasks = task.ParentTasks
-				taskDuration.Finished = task.Finished
+		for taskID, parsedTask := range taskMapDated.taskMap {
+			if task, exists := tasks[taskID]; exists {
+				task.Updates = parsedTask.updates
+				task.Category = parsedTask.category
+				task.ParentTasks = parsedTask.parentTasks
+				task.Finished = parsedTask.finished
 
-				if task.Finished && taskDuration.EndDate.IsZero() {
-					taskDuration.EndDate = commitDate
+				if parsedTask.finished && task.EndDate.IsZero() {
+					task.EndDate = commitDate
 				}
 
-				tasks[taskID] = taskDuration
+				tasks[taskID] = task
 			} else {
-				tasks[taskID] = domain.TaskDuration{
-					Task: domain.Task{
-						Id:          taskID,
-						Title:       task.Title,
-						Updates:     task.Updates,
-						Finished:    task.Finished,
-						Category:    task.Category,
-						ParentTasks: task.ParentTasks,
-					},
-					StartDate: commitDate,
+				tasks[taskID] = domain.Task{
+					Id:          taskID,
+					Title:       parsedTask.title,
+					Updates:     parsedTask.updates,
+					Finished:    parsedTask.finished,
+					Category:    parsedTask.category,
+					ParentTasks: parsedTask.parentTasks,
+					StartDate:   commitDate,
 				}
 			}
 		}
 
-		for taskID, taskDuration := range tasks {
-			if !currTasks[taskID] && !taskDuration.Finished && taskDuration.EndDate.IsZero() {
-				taskDuration.EndDate = commitDate
-				tasks[taskID] = taskDuration
+		for taskID, task := range tasks {
+			if !currTasks[taskID] && !task.Finished && task.EndDate.IsZero() {
+				task.EndDate = commitDate
+				tasks[taskID] = task
 			}
 		}
 	}
 
-	result := make([]domain.TaskDuration, 0, len(tasks))
+	result := make([]domain.Task, 0, len(tasks))
 	for _, td := range tasks {
 		result = append(result, td)
 	}

@@ -6,9 +6,16 @@ import (
 	"time"
 )
 
-func getFinishedTaskDurations(taskDurations []TaskDuration) []TaskDuration {
-	var finishedTasks []TaskDuration
-	for _, task := range taskDurations {
+type taskData struct {
+	taskId   TaskId
+	duration int
+	updates  int
+	category string
+}
+
+func getFinishedTasks(tasks []Task) []Task {
+	var finishedTasks []Task
+	for _, task := range tasks {
 		if task.Finished {
 			finishedTasks = append(finishedTasks, task)
 		}
@@ -17,9 +24,9 @@ func getFinishedTaskDurations(taskDurations []TaskDuration) []TaskDuration {
 	return finishedTasks
 }
 
-func getAbandonedTaskDurations(taskDurations []TaskDuration) []TaskDuration {
-	var abandonedTasks []TaskDuration
-	for _, task := range taskDurations {
+func getAbandonedTasks(tasks []Task) []Task {
+	var abandonedTasks []Task
+	for _, task := range tasks {
 		if !task.Finished && !task.EndDate.IsZero() {
 			abandonedTasks = append(abandonedTasks, task)
 		}
@@ -28,17 +35,17 @@ func getAbandonedTaskDurations(taskDurations []TaskDuration) []TaskDuration {
 	return abandonedTasks
 }
 
-func getTaskDurationsByMinDays(taskDurations []TaskDuration, minDays int) ([]TaskDuration, error) {
+func getTasksByMinDays(tasks []Task, minDays int) ([]Task, error) {
 	if minDays < 0 {
 		return nil, fmt.Errorf("minimum days cannot be negative")
 	}
 
 	if minDays == 0 {
-		return taskDurations, nil
+		return tasks, nil
 	}
 
-	var result []TaskDuration
-	for _, task := range taskDurations {
+	var result []Task
+	for _, task := range tasks {
 		if task.EndDate.IsZero() {
 			continue
 		}
@@ -52,9 +59,9 @@ func getTaskDurationsByMinDays(taskDurations []TaskDuration, minDays int) ([]Tas
 	return result, nil
 }
 
-func getTaskStats(taskDurations []TaskDuration, endDate time.Time) TaskStats {
-	if len(taskDurations) == 0 {
-		return TaskStats{
+func getTaskStats(tasks []Task, endDate time.Time) Stats {
+	if len(tasks) == 0 {
+		return Stats{
 			TotalTasks:          0,
 			LongestTaskId:       "",
 			AverageTaskDuration: 0,
@@ -64,16 +71,9 @@ func getTaskStats(taskDurations []TaskDuration, endDate time.Time) TaskStats {
 		}
 	}
 
-	type taskData struct {
-		taskId   TaskId
-		duration int
-		updates  int
-		category string
-	}
+	taskDataList := make([]taskData, 0, len(tasks))
 
-	tasks := make([]taskData, 0, len(taskDurations))
-
-	for _, task := range taskDurations {
+	for _, task := range tasks {
 		taskEndDate := task.EndDate
 		if taskEndDate.IsZero() {
 			taskEndDate = endDate
@@ -81,7 +81,7 @@ func getTaskStats(taskDurations []TaskDuration, endDate time.Time) TaskStats {
 
 		duration := int(taskEndDate.Sub(task.StartDate).Hours() / 24)
 
-		tasks = append(tasks, taskData{
+		taskDataList = append(taskDataList, taskData{
 			taskId:   task.Id,
 			duration: duration,
 			updates:  len(task.Updates),
@@ -91,31 +91,31 @@ func getTaskStats(taskDurations []TaskDuration, endDate time.Time) TaskStats {
 
 	categoryUpdates := make(map[string]int)
 
-	for _, task := range tasks {
-		categoryUpdates[task.category] += task.updates
+	for _, td := range taskDataList {
+		categoryUpdates[td.category] += td.updates
 	}
 
-	longestTask := tasks[0]
-	mostActiveTask := tasks[0]
+	longestTask := taskDataList[0]
+	mostActiveTask := taskDataList[0]
 	totalDuration := 0
 
-	for _, task := range tasks {
-		if task.duration > longestTask.duration {
-			longestTask = task
+	for _, td := range taskDataList {
+		if td.duration > longestTask.duration {
+			longestTask = td
 		}
 
-		if task.updates > mostActiveTask.updates {
-			mostActiveTask = task
+		if td.updates > mostActiveTask.updates {
+			mostActiveTask = td
 		}
 
-		totalDuration += task.duration
+		totalDuration += td.duration
 	}
 
-	slices.SortFunc(tasks, func(a, b taskData) int {
+	slices.SortFunc(taskDataList, func(a, b taskData) int {
 		return a.duration - b.duration
 	})
 
-	medianTask := tasks[len(tasks)/2]
+	medianTask := taskDataList[len(taskDataList)/2]
 
 	mostActiveCategory := ""
 	maxUpdates := 0
@@ -127,7 +127,7 @@ func getTaskStats(taskDurations []TaskDuration, endDate time.Time) TaskStats {
 		}
 	}
 
-	return TaskStats{
+	return Stats{
 		TotalTasks:          len(tasks),
 		LongestTaskId:       longestTask.taskId,
 		AverageTaskDuration: totalDuration / len(tasks),
@@ -137,48 +137,48 @@ func getTaskStats(taskDurations []TaskDuration, endDate time.Time) TaskStats {
 	}
 }
 
-func GetTaskInfoBetween(taskDurations []TaskDuration, endDate time.Time, minDays int) (TaskInfo, error) {
-	filteredTaskDurations, err := getTaskDurationsByMinDays(taskDurations, minDays)
+func GetTaskInfoBetween(tasks []Task, endDate time.Time, minDays int) (TaskInfo, error) {
+	filteredTasks, err := getTasksByMinDays(tasks, minDays)
 	if err != nil {
-		return TaskInfo{}, fmt.Errorf("filter task durations by min days: %w", err)
+		return TaskInfo{}, fmt.Errorf("filter tasks by min days: %w", err)
 	}
 
-	taskStats := getTaskStats(filteredTaskDurations, endDate)
+	taskStats := getTaskStats(filteredTasks, endDate)
 
 	return TaskInfo{
-		TaskStats:     taskStats,
-		TaskDurations: filteredTaskDurations,
+		Stats:     taskStats,
+		Tasks: filteredTasks,
 	}, nil
 }
 
-func GetFinishedTaskInfoBetween(taskDurations []TaskDuration, endDate time.Time, minDays int) (TaskInfo, error) {
-	filteredTaskDurations := getFinishedTaskDurations(taskDurations)
+func GetFinishedTaskInfoBetween(tasks []Task, endDate time.Time, minDays int) (TaskInfo, error) {
+	filteredTasks := getFinishedTasks(tasks)
 
-	filteredTaskDurations, err := getTaskDurationsByMinDays(filteredTaskDurations, minDays)
+	filteredTasks, err := getTasksByMinDays(filteredTasks, minDays)
 	if err != nil {
-		return TaskInfo{}, fmt.Errorf("filter task durations by min days: %w", err)
+		return TaskInfo{}, fmt.Errorf("filter tasks by min days: %w", err)
 	}
 
-	taskStats := getTaskStats(filteredTaskDurations, endDate)
+	taskStats := getTaskStats(filteredTasks, endDate)
 
 	return TaskInfo{
-		TaskStats:     taskStats,
-		TaskDurations: filteredTaskDurations,
+		Stats:     taskStats,
+		Tasks: filteredTasks,
 	}, nil
 }
 
-func GetAbandonedTaskInfoBetween(taskDurations []TaskDuration, endDate time.Time, minDays int) (TaskInfo, error) {
-	filteredTaskDurations := getAbandonedTaskDurations(taskDurations)
+func GetAbandonedTaskInfoBetween(tasks []Task, endDate time.Time, minDays int) (TaskInfo, error) {
+	filteredTasks := getAbandonedTasks(tasks)
 
-	filteredTaskDurations, err := getTaskDurationsByMinDays(filteredTaskDurations, minDays)
+	filteredTasks, err := getTasksByMinDays(filteredTasks, minDays)
 	if err != nil {
-		return TaskInfo{}, fmt.Errorf("filter task durations by min days: %w", err)
+		return TaskInfo{}, fmt.Errorf("filter tasks by min days: %w", err)
 	}
 
-	taskStats := getTaskStats(filteredTaskDurations, endDate)
+	taskStats := getTaskStats(filteredTasks, endDate)
 
 	return TaskInfo{
-		TaskStats:     taskStats,
-		TaskDurations: filteredTaskDurations,
+		Stats:     taskStats,
+		Tasks: filteredTasks,
 	}, nil
 }

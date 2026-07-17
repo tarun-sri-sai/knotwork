@@ -11,6 +11,27 @@ import (
 	"knotwork-core/internal/domain"
 )
 
+type parsedBlock interface {
+	isParsedBlock()
+}
+
+type parsedCategoryBlock struct {
+	id       string
+	category string
+}
+
+func (parsedCategoryBlock) isParsedBlock() {}
+
+type parsedTaskBlock struct {
+	id       string
+	level    int
+	title    string
+	updates  []string
+	finished bool
+}
+
+func (parsedTaskBlock) isParsedBlock()     {}
+
 func normalize(text string) string {
 	text = strings.TrimSpace(text)
 	text = strings.ReplaceAll(text, "\r\n", "\n")
@@ -69,8 +90,8 @@ func isFinished(blockLines []string) (bool, error) {
 	return len(blockLines) >= 2 && matched, nil
 }
 
-func parseBlocks(blocks [][]string) ([]block, error) {
-	blockData := []block{}
+func parseBlocks(blocks [][]string) ([]parsedBlock, error) {
+	blockData := []parsedBlock{}
 	for _, bl := range blocks {
 		indent, err := getIndent(bl)
 		if err != nil {
@@ -79,7 +100,7 @@ func parseBlocks(blocks [][]string) ([]block, error) {
 
 		if isCategoryBlock(bl) {
 			hash := sha1.Sum([]byte(bl[1]))
-			blockData = append(blockData, category{
+			blockData = append(blockData, parsedCategoryBlock{
 				category: bl[1],
 				id:       hex.EncodeToString(hash[:]),
 			})
@@ -97,7 +118,7 @@ func parseBlocks(blocks [][]string) ([]block, error) {
 		}
 
 		hash := sha1.Sum([]byte(blockLines[0]))
-		blockData = append(blockData, task{
+		blockData = append(blockData, parsedTaskBlock{
 			level:    indent,
 			title:    blockLines[0],
 			updates:  blockLines[1:],
@@ -109,20 +130,20 @@ func parseBlocks(blocks [][]string) ([]block, error) {
 	return blockData, nil
 }
 
-func validateHeirarchy(blockData []block) error {
+func validateHeirarchy(blockData []parsedBlock) error {
 	currIndents := []int{-1}
 	currCategory := ""
 	firstBlock := true
 
 	for _, bl := range blockData {
-		if categoryBlock, ok := bl.(category); ok {
+		if categoryBlock, ok := bl.(parsedCategoryBlock); ok {
 			firstBlock = true
 			currIndents = []int{-1}
 			currCategory = categoryBlock.category
 			continue
 		}
 
-		taskBlock, _ := bl.(task)
+		taskBlock, _ := bl.(parsedTaskBlock)
 
 		level := taskBlock.level
 
@@ -145,7 +166,7 @@ func validateHeirarchy(blockData []block) error {
 	return nil
 }
 
-func validateBlockData(blockData []block) error {
+func validateBlockData(blockData []parsedBlock) error {
 	if len(blockData) == 0 {
 		return errors.New("empty todo")
 	}
@@ -158,37 +179,37 @@ func validateBlockData(blockData []block) error {
 	return nil
 }
 
-func buildTaskMap(blockData []block) taskMap {
-	result := make(taskMap)
+func buildTaskMap(blockData []parsedBlock) parsedTaskMap {
+	result := make(parsedTaskMap)
 	currCategory := ""
 	categorySet := false
 
-	dummyTask := task{
+	dummyTask := parsedTaskBlock{
 		id:       "",
 		level:    -1,
 		title:    "",
 		updates:  []string{},
 		finished: false,
 	}
-	currParents := []task{dummyTask}
+	currParents := []parsedTaskBlock{dummyTask}
 	for _, bl := range blockData {
-		if categoryBlock, ok := bl.(category); ok {
+		if categoryBlock, ok := bl.(parsedCategoryBlock); ok {
 			currCategory = categoryBlock.category
 			categorySet = true
-			currParents = []task{dummyTask}
+			currParents = []parsedTaskBlock{dummyTask}
 			continue
 		}
 
-		taskBlock, _ := bl.(task)
+		taskBlock, _ := bl.(parsedTaskBlock)
 
-		currentTask := domain.Task{
-			Title:    taskBlock.title,
-			Updates:  taskBlock.updates,
-			Finished: taskBlock.finished,
+		currentTask := parsedTask{
+			title:    taskBlock.title,
+			updates:  taskBlock.updates,
+			finished: taskBlock.finished,
 		}
 
 		if categorySet {
-			currentTask.Category = currCategory
+			currentTask.category = currCategory
 		}
 
 		for len(currParents) > 0 &&
@@ -202,7 +223,7 @@ func buildTaskMap(blockData []block) taskMap {
 		}
 		h.Write([]byte(taskBlock.id))
 		taskId := hex.EncodeToString(h.Sum(nil))
-		currentTask.Id = domain.TaskId(taskId)
+		currentTask.id = domain.TaskId(taskId)
 
 		parentTitles := []string{}
 		finished := taskBlock.finished
@@ -213,8 +234,8 @@ func buildTaskMap(blockData []block) taskMap {
 				finished = true
 			}
 		}
-		currentTask.ParentTasks = parentTitles
-		currentTask.Finished = finished
+		currentTask.parentTasks = parentTitles
+		currentTask.finished = finished
 
 		result[domain.TaskId(taskId)] = currentTask
 		currParents = append(currParents, taskBlock)
@@ -223,7 +244,7 @@ func buildTaskMap(blockData []block) taskMap {
 	return result
 }
 
-func ParseTodo(text string) (taskMap, error) {
+func ParseTodo(text string) (parsedTaskMap, error) {
 	text = normalize(text)
 	blocks := splitBlocks(text)
 

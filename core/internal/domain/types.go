@@ -7,21 +7,17 @@ import (
 type TaskId string
 
 type Task struct {
-	Id          TaskId   `json:"id"`
-	Title       string   `json:"title"`
-	Updates     []string `json:"updates"`
-	Finished    bool     `json:"finished"`
-	Category    string   `json:"category"`
-	ParentTasks []string `json:"parentTasks"`
+	Id          TaskId    `json:"id"`
+	Title       string    `json:"title"`
+	Updates     []string  `json:"updates"`
+	Finished    bool      `json:"finished"`
+	Category    string    `json:"category"`
+	ParentTasks []string  `json:"parentTasks"`
+	StartDate   time.Time `json:"startDate"`
+	EndDate     time.Time `json:"endDate,omitzero"`
 }
 
-type TaskDuration struct {
-	Task
-	StartDate time.Time `json:"startDate"`
-	EndDate   time.Time `json:"endDate,omitzero"`
-}
-
-type TaskStats struct {
+type Stats struct {
 	TotalTasks          int    `json:"totalTasks"`
 	LongestTaskId       TaskId `json:"longestTaskId"`
 	AverageTaskDuration int    `json:"averageTaskDuration"`
@@ -31,14 +27,14 @@ type TaskStats struct {
 }
 
 type TaskInfo struct {
-	TaskStats     TaskStats      `json:"stats"`
-	TaskDurations []TaskDuration `json:"durations"`
+	Stats Stats  `json:"stats"`
+	Tasks []Task `json:"tasks"`
 }
 
 type TaskType string
 
 const (
-	Finished  TaskType = "finished"
-	Abandoned TaskType = "abandoned"
-	Default   TaskType = ""
+	TaskTypeFinished  TaskType = "finished"
+	TaskTypeAbandoned TaskType = "abandoned"
+	TaskTypeAll       TaskType = ""
 )

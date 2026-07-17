@@ -8,5 +8,5 @@ import (
 
 type Repository interface {
 	ParseDate(dateStr string) (time.Time, error)
-	GetTaskDurationsBetween(startDateStr, endDateStr string) ([]domain.TaskDuration, error)
+	GetTasksBetween(startDateStr, endDateStr string) ([]domain.Task, error)
 }
