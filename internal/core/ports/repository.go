@@ -3,7 +3,7 @@ package ports
 import (
 	"time"
 
-	"knotwork-core/internal/domain"
+	"github.com/tarun-sri-sai/knotwork/internal/core/domain"
 )
 
 type Repository interface {

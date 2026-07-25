@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"knotwork-core/internal/domain"
+	"github.com/tarun-sri-sai/knotwork/internal/core/domain"
 )
 
 type parsedBlock interface {
@@ -30,7 +30,7 @@ type parsedTaskBlock struct {
 	finished bool
 }
 
-func (parsedTaskBlock) isParsedBlock()     {}
+func (parsedTaskBlock) isParsedBlock() {}
 
 func normalize(text string) string {
 	text = strings.TrimSpace(text)

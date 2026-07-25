@@ -3,16 +3,16 @@ package git
 import (
 	"time"
 
-	"knotwork-core/internal/domain"
+	"github.com/tarun-sri-sai/knotwork/internal/core/domain"
 )
 
 type parsedTask struct {
-	id          domain.TaskId   
-	title       string   
-	updates     []string 
-	finished    bool     
-	category    string   
-	parentTasks []string 
+	id          domain.TaskId
+	title       string
+	updates     []string
+	finished    bool
+	category    string
+	parentTasks []string
 }
 
 type parsedTaskMap map[domain.TaskId]parsedTask

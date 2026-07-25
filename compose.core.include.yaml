@@ -1,9 +1,0 @@
-services:
-  core:
-    build:
-      context: core
-      dockerfile: Containerfile
-    env_file:
-      - core/.env
-    volumes:
-      - "./to-do:/data"

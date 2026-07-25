@@ -6,12 +6,8 @@ Progress tracking made faster, simpler, and better.
 
 ### Software Prerequisites
 
-- [Docker](https://www.docker.com)
-- [Docker Compose](https://docs.docker.com/compose)
-- [Git](https://git-scm.com)\*
-
-> [!NOTE]
-> \* Required based on repo type selected
+- [Go](https://go.dev) 1.0 or later
+- [Git](https://git-scm.com) 2.0 or later (required based on repo type selected)
 
 ### Repositories
 
@@ -103,10 +99,14 @@ The `to-do.txt` contents must follow the syntax rules mentioned below. Any commi
 
 #### MCP Server Usage with Git Repository
 
-1. You can edit the repo path in the volume bind for `/data` in `compose.core.include.yaml` under the `core` service to point to your Git repo.
-
-2. Run this command to start the MCP server:
+1. Run this command to install the MCP server:
 
    ```bash
-   docker compose --project-directory /abs/path/to/repo -f /abs/path/to/compose.mcp.yaml run --rm -T mcp
+   go install github.com/tarun-sri-sai/knotwork/cmd/knotwork-mcp@latest
+   ```
+
+2. Run this command to start the MCP server (replace the path to to-do repo with the actual path):
+
+   ```bash
+   knotwork-mcp -t git -d path/to/to-do/repo
    ```

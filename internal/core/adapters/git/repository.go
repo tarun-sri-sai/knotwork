@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"knotwork-core/internal/domain"
-	"knotwork-core/internal/ports"
+	"github.com/tarun-sri-sai/knotwork/internal/core/domain"
+	"github.com/tarun-sri-sai/knotwork/internal/core/ports"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"

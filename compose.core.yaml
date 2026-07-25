@@ -1,6 +1,0 @@
-include:
-  - compose.core.include.yaml
-services:
-  core:
-    ports:
-      - 80:80
