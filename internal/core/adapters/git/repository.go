@@ -192,13 +192,13 @@ func (r *GitRepository) GetTasksBetween(startDateStr, endDateStr string) ([]doma
 		}
 
 		for taskID, parsedTask := range taskMapDated.taskMap {
-			if task, exists := tasks[taskID]; exists {
+			if task, exists := tasks[taskID]; exists && task.EndDate.IsZero() {
 				task.Updates = parsedTask.updates
 				task.Category = parsedTask.category
 				task.ParentTasks = parsedTask.parentTasks
 				task.Finished = parsedTask.finished
 
-				if parsedTask.finished && task.EndDate.IsZero() {
+				if parsedTask.finished {
 					task.EndDate = commitDate
 				}
 
