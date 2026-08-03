@@ -67,7 +67,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "knotwork",
+	Use:   "knotwork-mcp",
 	Short: "Knotwork MCP server",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
