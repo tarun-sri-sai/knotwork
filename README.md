@@ -1,4 +1,4 @@
-# Knotwork v1.0.0
+# Knotwork v1.1.0
 
 Progress tracking made faster, simpler, and better.
 
