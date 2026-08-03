@@ -192,19 +192,15 @@ func (r *GitRepository) GetTasksBetween(startDateStr, endDateStr string) ([]doma
 		}
 
 		for taskID, parsedTask := range taskMapDated.taskMap {
+			var task domain.Task
+
 			if task, exists := tasks[taskID]; exists && task.EndDate.IsZero() {
 				task.Updates = parsedTask.updates
 				task.Category = parsedTask.category
 				task.ParentTasks = parsedTask.parentTasks
 				task.Finished = parsedTask.finished
-
-				if parsedTask.finished {
-					task.EndDate = commitDate
-				}
-
-				tasks[taskID] = task
 			} else {
-				tasks[taskID] = domain.Task{
+				task = domain.Task{
 					Id:          taskID,
 					Title:       parsedTask.title,
 					Updates:     parsedTask.updates,
@@ -214,6 +210,12 @@ func (r *GitRepository) GetTasksBetween(startDateStr, endDateStr string) ([]doma
 					StartDate:   commitDate,
 				}
 			}
+
+			if parsedTask.finished {
+				task.EndDate = commitDate
+			}
+
+			tasks[taskID] = task
 		}
 
 		for taskID, task := range tasks {
