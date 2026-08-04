@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 
@@ -12,9 +13,9 @@ import (
 
 type TodosInput struct {
 	StartDate string `json:"startDate,omitempty" jsonschema:"date from when to find to-do's"`
-	EndDate   string `json:"endDate,omitempty" jsonschema:"date till when to find to-do's"`
-	MinDays   int    `json:"minDays,omitempty" jsonschema:"minimum age of a finished/abandoned to-do for it to be included in the result"`
-	Type      string `json:"type,omitempty" jsonschema:"type of task (\"\", \"abandoned\", \"finished\")"`
+	EndDate   string `json:"endDate,omitempty"   jsonschema:"date till when to find to-do's"`
+	MinDays   int    `json:"minDays,omitempty"   jsonschema:"minimum age of a finished/abandoned to-do for it to be included in the result"`
+	Type      string `json:"type,omitempty"      jsonschema:"type of task (\"\", \"abandoned\", \"finished\")"`
 }
 
 type TodosOutput struct {
@@ -54,7 +55,7 @@ func Todos(todosInput TodosInput) (TodosOutput, error) {
 			return TodosOutput{}, fmt.Errorf("get task info: %w", err)
 		}
 	default:
-		return TodosOutput{}, fmt.Errorf("invalid task type")
+		return TodosOutput{}, errors.New("invalid task type")
 	}
 
 	return TodosOutput{TaskInfo: taskInfo}, nil
@@ -74,6 +75,7 @@ var rootCmd = &cobra.Command{
 	Short: "Knotwork CLI",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var err error
+
 		core, err = NewCore(repoType, repoDsn)
 		if err != nil {
 			return err
@@ -94,6 +96,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		fmt.Println(string(data))
+
 		return nil
 	},
 }
@@ -111,7 +114,8 @@ func init() {
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		log.Fatal(err)
 	}
 }

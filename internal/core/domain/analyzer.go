@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -15,6 +16,7 @@ type taskData struct {
 
 func getFinishedTasks(tasks []Task) []Task {
 	var finishedTasks []Task
+
 	for _, task := range tasks {
 		if task.Finished {
 			finishedTasks = append(finishedTasks, task)
@@ -26,6 +28,7 @@ func getFinishedTasks(tasks []Task) []Task {
 
 func getAbandonedTasks(tasks []Task) []Task {
 	var abandonedTasks []Task
+
 	for _, task := range tasks {
 		if !task.Finished && !task.EndDate.IsZero() {
 			abandonedTasks = append(abandonedTasks, task)
@@ -37,7 +40,7 @@ func getAbandonedTasks(tasks []Task) []Task {
 
 func getTasksByMinDays(tasks []Task, minDays int) ([]Task, error) {
 	if minDays < 0 {
-		return nil, fmt.Errorf("minimum days cannot be negative")
+		return nil, errors.New("minimum days cannot be negative")
 	}
 
 	if minDays == 0 {
@@ -45,6 +48,7 @@ func getTasksByMinDays(tasks []Task, minDays int) ([]Task, error) {
 	}
 
 	var result []Task
+
 	for _, task := range tasks {
 		if task.EndDate.IsZero() {
 			continue
@@ -146,7 +150,7 @@ func GetTaskInfoBetween(tasks []Task, endDate time.Time, minDays int) (TaskInfo,
 	taskStats := getTaskStats(filteredTasks, endDate)
 
 	return TaskInfo{
-		Stats:     taskStats,
+		Stats: taskStats,
 		Tasks: filteredTasks,
 	}, nil
 }
@@ -162,7 +166,7 @@ func GetFinishedTaskInfoBetween(tasks []Task, endDate time.Time, minDays int) (T
 	taskStats := getTaskStats(filteredTasks, endDate)
 
 	return TaskInfo{
-		Stats:     taskStats,
+		Stats: taskStats,
 		Tasks: filteredTasks,
 	}, nil
 }
@@ -178,7 +182,7 @@ func GetAbandonedTaskInfoBetween(tasks []Task, endDate time.Time, minDays int) (
 	taskStats := getTaskStats(filteredTasks, endDate)
 
 	return TaskInfo{
-		Stats:     taskStats,
+		Stats: taskStats,
 		Tasks: filteredTasks,
 	}, nil
 }

@@ -35,6 +35,7 @@ func (parsedTaskBlock) isParsedBlock() {}
 func normalize(text string) string {
 	text = strings.TrimSpace(text)
 	text = strings.ReplaceAll(text, "\r\n", "\n")
+
 	return strings.ReplaceAll(text, "\r", "\n")
 }
 
@@ -43,10 +44,12 @@ func splitBlocks(text string) [][]string {
 	blocks := blockRegex.Split(text, -1)
 
 	result := [][]string{}
+
 	for _, block := range blocks {
 		lines := strings.Split(block, "\n")
 		result = append(result, lines)
 	}
+
 	return result
 }
 
@@ -56,12 +59,15 @@ func isCategoryBlock(block []string) bool {
 	}
 
 	border := strings.Repeat("*", 32)
+
 	return block[0] == border && block[2] == border
 }
 
 func getIndent(block []string) (int, error) {
 	var currIndent string
+
 	hasIndent := false
+
 	indentPattern := regexp.MustCompile(`^((?: {4})*)\S.*$`)
 	for _, line := range block {
 		matches := indentPattern.FindStringSubmatch(line)
@@ -92,6 +98,7 @@ func isFinished(blockLines []string) (bool, error) {
 
 func parseBlocks(blocks [][]string) ([]parsedBlock, error) {
 	blockData := []parsedBlock{}
+
 	for _, bl := range blocks {
 		indent, err := getIndent(bl)
 		if err != nil {
@@ -104,6 +111,7 @@ func parseBlocks(blocks [][]string) ([]parsedBlock, error) {
 				category: bl[1],
 				id:       hex.EncodeToString(hash[:]),
 			})
+
 			continue
 		}
 
@@ -140,6 +148,7 @@ func validateHeirarchy(blockData []parsedBlock) error {
 			firstBlock = true
 			currIndents = []int{-1}
 			currCategory = categoryBlock.category
+
 			continue
 		}
 
@@ -192,11 +201,13 @@ func buildTaskMap(blockData []parsedBlock) parsedTaskMap {
 		finished: false,
 	}
 	currParents := []parsedTaskBlock{dummyTask}
+
 	for _, bl := range blockData {
 		if categoryBlock, ok := bl.(parsedCategoryBlock); ok {
 			currCategory = categoryBlock.category
 			categorySet = true
 			currParents = []parsedTaskBlock{dummyTask}
+
 			continue
 		}
 
@@ -221,12 +232,14 @@ func buildTaskMap(blockData []parsedBlock) parsedTaskMap {
 		for _, parent := range currParents[1:] {
 			h.Write([]byte(parent.id))
 		}
+
 		h.Write([]byte(taskBlock.id))
 		taskId := hex.EncodeToString(h.Sum(nil))
 		currentTask.id = domain.TaskId(taskId)
 
 		parentTitles := []string{}
 		finished := taskBlock.finished
+
 		for _, parent := range currParents[1:] {
 			parentTitles = append(parentTitles, parent.title)
 
@@ -234,10 +247,12 @@ func buildTaskMap(blockData []parsedBlock) parsedTaskMap {
 				finished = true
 			}
 		}
+
 		currentTask.parentTasks = parentTitles
 		currentTask.finished = finished
 
 		result[domain.TaskId(taskId)] = currentTask
+
 		currParents = append(currParents, taskBlock)
 	}
 

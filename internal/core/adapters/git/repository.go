@@ -1,6 +1,7 @@
 package git
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -45,16 +46,19 @@ func (r *GitRepository) getHistory() ([]historyEntry, error) {
 	}
 
 	result := []historyEntry{}
+
 	for {
 		c, err := iter.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
+
 		if err != nil {
 			return result, nil
 		}
 
 		msg := strings.TrimSpace(c.Message)
+
 		date, err := time.Parse(dateFmt, msg)
 		if err != nil {
 			continue
@@ -66,6 +70,7 @@ func (r *GitRepository) getHistory() ([]historyEntry, error) {
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].date.Before(result[j].date)
 	})
+
 	return result, nil
 }
 
@@ -78,7 +83,7 @@ func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]histo
 	}
 
 	if len(history) == 0 {
-		return []historyEntry{}, fmt.Errorf("no history")
+		return []historyEntry{}, errors.New("no history")
 	}
 
 	if startDate.IsZero() {
@@ -104,7 +109,7 @@ func (r *GitRepository) getHistoryBetween(startDate, endDate time.Time) ([]histo
 	}
 
 	if start > end {
-		return []historyEntry{}, fmt.Errorf("no commits in range")
+		return []historyEntry{}, errors.New("no commits in range")
 	}
 
 	return history[start : end+1], nil
@@ -124,7 +129,8 @@ func (r *GitRepository) getTaskMapDated(historyEntry historyEntry) (parsedTaskMa
 	}
 
 	defer func() {
-		if err := reader.Close(); err != nil {
+		err := reader.Close()
+		if err != nil {
 			log.Printf("failed to close reader: %s\n", err.Error())
 		}
 	}()
@@ -172,10 +178,12 @@ func (r *GitRepository) GetTasksBetween(startDateStr, endDateStr string) ([]doma
 	}
 
 	tasks := make(map[domain.TaskId]domain.Task)
+
 	for _, h := range historySlice {
 		taskMapDated, err := r.getTaskMapDated(h)
 		if err != nil {
 			log.Printf("get task map dated for %s: %s\n", h.commit, err.Error())
+
 			continue
 		}
 
