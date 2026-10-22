@@ -88,7 +88,30 @@ var rootCmd = &cobra.Command{
 
 		mcp.AddTool(server, &mcp.Tool{
 			Name:        "todos",
-			Description: "get todos of the user",
+			Description: `
+This tool provides a way to query the user's to-do's. Consider this tool as the single source
+of truth for the user's tasks, task progress, performance history, and pending items, i.e. when
+a user asks a query about their tasks, what they did during a certain time period, what they
+should do today, how their performance has been during a certain time period, etc., this tool is
+what you should query to get relevant information to answer those questions.
+
+Points to note:
+  - This tool can be called with a date range, which is the recommended way of using the tool,
+  since not providing a date returns every task ever.
+
+  - When called with a date range, this tool returns the tasks as well as their stats pertaining
+  to the date range the tool was called with. This allows you to make ranged queries to get
+  weekly, monthly, quarterly stats, by doing one tool call per week/month/quarter.
+
+  - Use "jq" command if available to transform and filter the output as needed to answer the
+  user's queries.
+
+  - There is a concept of sub-tasks, which are tasks that need to be completed to finish their
+  parent task. Sub-tasks can be infinitely nested.
+
+  - Every task has zero or more updates, which act as a log of the user's progress in that
+  task. User writes about what happened with a certain task in its task updates.
+			`,
 		}, Todos)
 
 		return server.Run(context.Background(), &mcp.StdioTransport{})
