@@ -81,7 +81,7 @@ var rootCmd = &cobra.Command{
 		server := mcp.NewServer(
 			&mcp.Implementation{
 				Name:    "knotwork",
-				Version: "v1.1.0",
+				Version: "v1.1.1",
 			},
 			nil,
 		)
